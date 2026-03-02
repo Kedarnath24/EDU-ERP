@@ -4,10 +4,86 @@ const supabase = require('../config/supabase');
 const { requireAuth } = require('../middleware/auth');
 const { body, query, validationResult } = require('express-validator');
 
-// ──────────────────────────────────────────────────────────
+const TABLE = 'attendance_records';
+
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Look up the employee row for the authenticated user.
+ * Creates a skeleton employee record if one doesn't exist yet.
+ * Returns { employeeId, error }.
+ */
+async function resolveEmployeeId(reqUser) {
+    const { data: emp, error: empErr } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('user_id', reqUser.id)
+        .maybeSingle();
+
+    if (empErr) return { error: empErr.message };
+
+    if (emp) return { employeeId: emp.id };
+
+    // Auto-create employee record on first use
+    const fullName =
+        reqUser.user_metadata?.full_name ||
+        reqUser.user_metadata?.name ||
+        reqUser.email?.split('@')[0] ||
+        'Employee';
+
+    const { data: created, error: createErr } = await supabase
+        .from('employees')
+        .insert({ user_id: reqUser.id, full_name: fullName, email: reqUser.email, status: 'active' })
+        .select('id')
+        .single();
+
+    if (createErr) return { error: createErr.message };
+    return { employeeId: created.id };
+}
+
+/**
+ * Normalise a raw attendance_records DB row into the standard API shape.
+ * - Renames DB columns to the names the frontend expects.
+ * - Converts total_break_duration_ms → total_break_minutes.
+ * - Computes work_hours from timestamps if both are present.
+ */
+function toApiRecord(row) {
+    if (!row) return null;
+
+    const breakMs = row.total_break_duration_ms || 0;
+    const totalBreakMinutes = Math.round(breakMs / 60000);
+
+    let workHours = 0;
+    if (row.check_in && row.check_out) {
+        const workedMs = new Date(row.check_out).getTime() - new Date(row.check_in).getTime() - breakMs;
+        workHours = parseFloat((Math.max(0, workedMs) / 3600000).toFixed(2));
+    }
+
+    return {
+        id: row.id,
+        employee_id: row.employee_id,
+        date: row.date,
+        status: row.status,
+        // Renamed for frontend consistency
+        check_in_time: row.check_in || null,
+        check_out_time: row.check_out || null,
+        break_start_time: row.break_start || null,
+        break_end_time: row.break_end || null,
+        // Derived / computed
+        total_break_minutes: totalBreakMinutes,
+        work_mode: row.work_mode || null,
+        location: row.location || null,
+        work_hours: workHours,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+    };
+}
+
+// ─────────────────────────────────────────────────────────────
 // POST /api/attendance/checkin
-// Records a check-in for the authenticated employee
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 router.post(
     '/checkin',
     requireAuth,
@@ -29,67 +105,65 @@ router.post(
         }
 
         try {
-            const userId = req.user.id;
+            // 1. Resolve employee_id (required by the table; NOT NULL + FK)
+            const { employeeId, error: empError } = await resolveEmployeeId(req.user);
+            if (empError) {
+                console.error('Resolve employee error:', empError);
+                return res.status(500).json({ error: 'Could not resolve employee record', details: empError });
+            }
+
             const now = new Date().toISOString();
             const today = now.split('T')[0]; // YYYY-MM-DD
 
-            // Prevent double check-in on the same day
+            // 2. Prevent double check-in (unique constraint: employee_id + date)
             const { data: existing } = await supabase
-                .from('attendance')
-                .select('id, status, check_in_time')
-                .eq('user_id', userId)
+                .from(TABLE)
+                .select('id, status, check_in')
+                .eq('employee_id', employeeId)
                 .eq('date', today)
                 .maybeSingle();
 
             if (existing) {
                 return res.status(409).json({
                     error: 'Already checked in today',
-                    record: existing,
+                    record: toApiRecord(existing),
                 });
             }
 
-            // Get or create employee record to link the attendance
-            const { data: employee } = await supabase
-                .from('employees')
-                .select('id')
-                .eq('user_id', userId)
-                .maybeSingle();
-
+            // 3. Insert new attendance record
             const { data, error } = await supabase
-                .from('attendance')
+                .from(TABLE)
                 .insert({
-                    user_id: userId,
-                    employee_id: employee?.id || null,
+                    employee_id: employeeId,
                     date: today,
-                    check_in_time: now,
+                    check_in: now,
                     work_mode: req.body.work_mode || 'office',
                     location: req.body.location || null,
-                    check_in_note: req.body.note || null,
                     status: 'present',
+                    total_break_duration_ms: 0,
                 })
                 .select()
                 .single();
 
             if (error) {
-                console.error('Check-in error:', error);
-                return res.status(500).json({ error: 'Failed to record check-in' });
+                console.error('Check-in Supabase error:', error);
+                return res.status(500).json({ error: 'Failed to record check-in', details: error.message });
             }
 
             return res.status(201).json({
                 message: 'Checked in successfully',
-                record: data,
+                record: toApiRecord(data),
             });
         } catch (err) {
-            console.error('Check-in error:', err);
+            console.error('Check-in unexpected error:', err);
             return res.status(500).json({ error: 'Internal server error' });
         }
     }
 );
 
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 // POST /api/attendance/checkout
-// Records a check-out for today's active attendance record
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 router.post(
     '/checkout',
     requireAuth,
@@ -104,40 +178,43 @@ router.post(
         }
 
         try {
-            const userId = req.user.id;
+            const { employeeId, error: empError } = await resolveEmployeeId(req.user);
+            if (empError) return res.status(500).json({ error: 'Could not resolve employee record', details: empError });
+
             const now = new Date().toISOString();
             const today = now.split('T')[0];
 
             // Find today's open attendance record
             const { data: record, error: findErr } = await supabase
-                .from('attendance')
+                .from(TABLE)
                 .select('*')
-                .eq('user_id', userId)
+                .eq('employee_id', employeeId)
                 .eq('date', today)
                 .maybeSingle();
 
             if (findErr || !record) {
                 return res.status(404).json({ error: 'No active check-in found for today' });
             }
-
-            if (record.check_out_time) {
+            if (record.check_out) {
                 return res.status(409).json({ error: 'Already checked out today' });
             }
 
-            // Calculate total work hours
-            const checkInMs = new Date(record.check_in_time).getTime();
-            const checkOutMs = new Date(now).getTime();
-            const totalMs = checkOutMs - checkInMs;
-            const breakMs = record.total_break_minutes ? record.total_break_minutes * 60 * 1000 : 0;
-            const workMs = Math.max(0, totalMs - breakMs);
-            const workHours = parseFloat((workMs / (1000 * 60 * 60)).toFixed(2));
+            // If still on break, end the break first and accumulate its duration
+            let finalBreakMs = record.total_break_duration_ms || 0;
+            let breakEndVal = record.break_end;
+
+            if (record.break_start && !record.break_end) {
+                const ongoingBreakMs = new Date(now).getTime() - new Date(record.break_start).getTime();
+                finalBreakMs += ongoingBreakMs;
+                breakEndVal = now;
+            }
 
             const { data, error } = await supabase
-                .from('attendance')
+                .from(TABLE)
                 .update({
-                    check_out_time: now,
-                    check_out_note: req.body.note || null,
-                    work_hours: workHours,
+                    check_out: now,
+                    break_end: breakEndVal,
+                    total_break_duration_ms: finalBreakMs,
                     updated_at: now,
                 })
                 .eq('id', record.id)
@@ -145,33 +222,31 @@ router.post(
                 .single();
 
             if (error) {
-                console.error('Check-out error:', error);
-                return res.status(500).json({ error: 'Failed to record check-out' });
+                console.error('Check-out Supabase error:', error);
+                return res.status(500).json({ error: 'Failed to record check-out', details: error.message });
             }
 
             return res.json({
                 message: 'Checked out successfully',
-                record: data,
+                record: toApiRecord(data),
             });
         } catch (err) {
-            console.error('Check-out error:', err);
+            console.error('Check-out unexpected error:', err);
             return res.status(500).json({ error: 'Internal server error' });
         }
     }
 );
 
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 // POST /api/attendance/break/start
-// Starts a break for today's active attendance record
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 router.post(
     '/break/start',
     requireAuth,
     [
         body('break_type')
             .optional()
-            .isIn(['lunch', 'tea', 'short', 'meeting', 'other'])
-            .withMessage('Invalid break type'),
+            .isIn(['lunch', 'tea', 'short', 'meeting', 'other']),
     ],
     async (req, res) => {
         const errors = validationResult(req);
@@ -183,35 +258,36 @@ router.post(
         }
 
         try {
-            const userId = req.user.id;
+            const { employeeId, error: empError } = await resolveEmployeeId(req.user);
+            if (empError) return res.status(500).json({ error: 'Could not resolve employee record', details: empError });
+
             const now = new Date().toISOString();
             const today = now.split('T')[0];
 
             const { data: record, error: findErr } = await supabase
-                .from('attendance')
+                .from(TABLE)
                 .select('*')
-                .eq('user_id', userId)
+                .eq('employee_id', employeeId)
                 .eq('date', today)
                 .maybeSingle();
 
             if (findErr || !record) {
                 return res.status(404).json({ error: 'No active check-in found for today' });
             }
-
-            if (record.check_out_time) {
-                return res.status(409).json({ error: 'Cannot start break after check-out' });
+            if (record.check_out) {
+                return res.status(409).json({ error: 'Cannot start a break after check-out' });
             }
-
-            if (record.break_start_time && !record.break_end_time) {
+            // Active break: break_start set and break_end is still null
+            if (record.break_start && !record.break_end) {
                 return res.status(409).json({ error: 'Already on a break' });
             }
 
+            // Start a new break (overwrite break_start; clear break_end)
             const { data, error } = await supabase
-                .from('attendance')
+                .from(TABLE)
                 .update({
-                    break_start_time: now,
-                    break_end_time: null,
-                    break_type: req.body.break_type || 'other',
+                    break_start: now,
+                    break_end: null,
                     updated_at: now,
                 })
                 .eq('id', record.id)
@@ -219,57 +295,55 @@ router.post(
                 .single();
 
             if (error) {
-                console.error('Break start error:', error);
-                return res.status(500).json({ error: 'Failed to start break' });
+                console.error('Break start Supabase error:', error);
+                return res.status(500).json({ error: 'Failed to start break', details: error.message });
             }
 
-            return res.json({
-                message: 'Break started',
-                record: data,
-            });
+            return res.json({ message: 'Break started', record: toApiRecord(data) });
         } catch (err) {
-            console.error('Break start error:', err);
+            console.error('Break start unexpected error:', err);
             return res.status(500).json({ error: 'Internal server error' });
         }
     }
 );
 
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 // POST /api/attendance/break/end
-// Ends the current break and accumulates break time
-// ──────────────────────────────────────────────────────────
+// Accumulates break duration into total_break_duration_ms
+// ─────────────────────────────────────────────────────────────
 router.post('/break/end', requireAuth, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const { employeeId, error: empError } = await resolveEmployeeId(req.user);
+        if (empError) return res.status(500).json({ error: 'Could not resolve employee record', details: empError });
+
         const now = new Date().toISOString();
         const today = now.split('T')[0];
 
         const { data: record, error: findErr } = await supabase
-            .from('attendance')
+            .from(TABLE)
             .select('*')
-            .eq('user_id', userId)
+            .eq('employee_id', employeeId)
             .eq('date', today)
             .maybeSingle();
 
         if (findErr || !record) {
             return res.status(404).json({ error: 'No active check-in found for today' });
         }
-
-        if (!record.break_start_time || record.break_end_time) {
+        // Must have an active break (break_start set, break_end null)
+        if (!record.break_start || record.break_end) {
             return res.status(409).json({ error: 'No active break to end' });
         }
 
-        // Calculate this break's duration in minutes
-        const breakStartMs = new Date(record.break_start_time).getTime();
-        const breakEndMs = new Date(now).getTime();
-        const thisBrBreakMinutes = Math.round((breakEndMs - breakStartMs) / (1000 * 60));
-        const totalBreakMinutes = (record.total_break_minutes || 0) + thisBrBreakMinutes;
+        // Calculate this break's duration in ms and add to running total
+        const thisBreakMs = new Date(now).getTime() - new Date(record.break_start).getTime();
+        const newTotalBreakMs = (record.total_break_duration_ms || 0) + thisBreakMs;
+        const thisBreakMins = Math.round(thisBreakMs / 60000);
 
         const { data, error } = await supabase
-            .from('attendance')
+            .from(TABLE)
             .update({
-                break_end_time: now,
-                total_break_minutes: totalBreakMinutes,
+                break_end: now,
+                total_break_duration_ms: newTotalBreakMs,
                 updated_at: now,
             })
             .eq('id', record.id)
@@ -277,54 +351,54 @@ router.post('/break/end', requireAuth, async (req, res) => {
             .single();
 
         if (error) {
-            console.error('Break end error:', error);
-            return res.status(500).json({ error: 'Failed to end break' });
+            console.error('Break end Supabase error:', error);
+            return res.status(500).json({ error: 'Failed to end break', details: error.message });
         }
 
         return res.json({
             message: 'Break ended',
-            break_duration_minutes: thisBrBreakMinutes,
-            record: data,
+            break_duration_minutes: thisBreakMins,
+            record: toApiRecord(data),
         });
     } catch (err) {
-        console.error('Break end error:', err);
+        console.error('Break end unexpected error:', err);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 // GET /api/attendance/today
-// Returns today's attendance status for the logged-in user
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 router.get('/today', requireAuth, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const { employeeId, error: empError } = await resolveEmployeeId(req.user);
+        if (empError) return res.status(500).json({ error: 'Could not resolve employee record', details: empError });
+
         const today = new Date().toISOString().split('T')[0];
 
         const { data, error } = await supabase
-            .from('attendance')
+            .from(TABLE)
             .select('*')
-            .eq('user_id', userId)
+            .eq('employee_id', employeeId)
             .eq('date', today)
             .maybeSingle();
 
         if (error) {
-            console.error('Fetch today attendance error:', error);
-            return res.status(500).json({ error: 'Failed to fetch today\'s attendance' });
+            console.error('Today attendance Supabase error:', error);
+            return res.status(500).json({ error: "Failed to fetch today's attendance", details: error.message });
         }
 
-        return res.json({ record: data || null });
+        return res.json({ record: toApiRecord(data) });
     } catch (err) {
-        console.error('Fetch today attendance error:', err);
+        console.error('Today attendance unexpected error:', err);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 // GET /api/attendance/history
-// Returns attendance history for the logged-in user
-// Query params: month (YYYY-MM), limit (default 30)
-// ──────────────────────────────────────────────────────────
+// ?month=YYYY-MM  &limit=30
+// ─────────────────────────────────────────────────────────────
 router.get(
     '/history',
     requireAuth,
@@ -332,8 +406,11 @@ router.get(
         query('month')
             .optional()
             .matches(/^\d{4}-\d{2}$/)
-            .withMessage('month must be in YYYY-MM format'),
-        query('limit').optional().isInt({ min: 1, max: 365 }).withMessage('limit must be 1-365'),
+            .withMessage('month must be YYYY-MM'),
+        query('limit')
+            .optional()
+            .isInt({ min: 1, max: 365 })
+            .withMessage('limit must be 1-365'),
     ],
     async (req, res) => {
         const errors = validationResult(req);
@@ -345,86 +422,95 @@ router.get(
         }
 
         try {
-            const userId = req.user.id;
+            const { employeeId, error: empError } = await resolveEmployeeId(req.user);
+            if (empError) return res.status(500).json({ error: 'Could not resolve employee record', details: empError });
+
             const limit = parseInt(req.query.limit) || 30;
 
-            let queryBuilder = supabase
-                .from('attendance')
+            let q = supabase
+                .from(TABLE)
                 .select('*')
-                .eq('user_id', userId)
+                .eq('employee_id', employeeId)
                 .order('date', { ascending: false })
                 .limit(limit);
 
-            // Filter by month if provided (e.g., 2026-02)
             if (req.query.month) {
-                const [year, month] = req.query.month.split('-');
-                const startDate = `${year}-${month}-01`;
-                const endOfMonth = new Date(parseInt(year), parseInt(month), 0);
-                const endDate = `${year}-${month}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
-                queryBuilder = queryBuilder.gte('date', startDate).lte('date', endDate);
+                const [year, mon] = req.query.month.split('-');
+                const startDate = `${year}-${mon}-01`;
+                const daysInMonth = new Date(parseInt(year), parseInt(mon), 0).getDate();
+                const endDate = `${year}-${mon}-${String(daysInMonth).padStart(2, '0')}`;
+                q = q.gte('date', startDate).lte('date', endDate);
             }
 
-            const { data, error } = await queryBuilder;
+            const { data, error } = await q;
 
             if (error) {
-                console.error('Fetch attendance history error:', error);
-                return res.status(500).json({ error: 'Failed to fetch attendance history' });
+                console.error('History Supabase error:', error);
+                return res.status(500).json({ error: 'Failed to fetch attendance history', details: error.message });
             }
 
-            return res.json({ records: data || [] });
+            return res.json({ records: (data || []).map(toApiRecord) });
         } catch (err) {
-            console.error('Fetch attendance history error:', err);
+            console.error('History unexpected error:', err);
             return res.status(500).json({ error: 'Internal server error' });
         }
     }
 );
 
-// ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 // GET /api/attendance/stats
-// Returns attendance statistics: present days, total hours,
-// average hours/day, absent days for the logged-in user
-// ──────────────────────────────────────────────────────────
+// Monthly stats for the logged-in employee
+// ─────────────────────────────────────────────────────────────
 router.get('/stats', requireAuth, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const { employeeId, error: empError } = await resolveEmployeeId(req.user);
+        if (empError) return res.status(500).json({ error: 'Could not resolve employee record', details: empError });
 
-        // Default: current month
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const startDate = `${year}-${month}-01`;
-        const endOfMonth = new Date(year, now.getMonth() + 1, 0);
-        const endDate = `${year}-${month}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
+        const daysInMonth = new Date(year, now.getMonth() + 1, 0).getDate();
+        const endDate = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
 
         const { data, error } = await supabase
-            .from('attendance')
-            .select('status, work_hours, date')
-            .eq('user_id', userId)
+            .from(TABLE)
+            .select('status, check_in, check_out, total_break_duration_ms, date')
+            .eq('employee_id', employeeId)
             .gte('date', startDate)
             .lte('date', endDate);
 
         if (error) {
-            console.error('Fetch stats error:', error);
-            return res.status(500).json({ error: 'Failed to fetch attendance stats' });
+            console.error('Stats Supabase error:', error);
+            return res.status(500).json({ error: 'Failed to fetch attendance stats', details: error.message });
         }
 
         const records = data || [];
         const presentDays = records.filter((r) => r.status === 'present' || r.status === 'late').length;
         const absentDays = records.filter((r) => r.status === 'absent').length;
-        const totalHours = records.reduce((sum, r) => sum + (r.work_hours || 0), 0);
-        const avgHoursPerDay = presentDays > 0 ? parseFloat((totalHours / presentDays).toFixed(1)) : 0;
+
+        // Compute total work hours across all records
+        let totalWorkMs = 0;
+        for (const r of records) {
+            if (r.check_in && r.check_out) {
+                const workedMs = new Date(r.check_out).getTime() - new Date(r.check_in).getTime() - (r.total_break_duration_ms || 0);
+                totalWorkMs += Math.max(0, workedMs);
+            }
+        }
+        const totalHours = parseFloat((totalWorkMs / 3600000).toFixed(1));
+        const avgHours = presentDays > 0 ? parseFloat((totalHours / presentDays).toFixed(1)) : 0;
 
         return res.json({
             stats: {
                 present_days: presentDays,
                 absent_days: absentDays,
-                total_hours: parseFloat(totalHours.toFixed(1)),
-                avg_hours_per_day: avgHoursPerDay,
+                total_hours: totalHours,
+                avg_hours_per_day: avgHours,
                 month: `${year}-${month}`,
             },
         });
     } catch (err) {
-        console.error('Fetch stats error:', err);
+        console.error('Stats unexpected error:', err);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });

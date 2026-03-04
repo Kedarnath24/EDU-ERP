@@ -37,7 +37,9 @@ import {
   Activity,
   AlertCircle,
   History,
-  Upload
+  Upload,
+  Copy,
+  User
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -2727,118 +2729,149 @@ export default function HRMEmployees() {
 
       {/* Edit Employee Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Edit className="h-5 w-5 text-blue-600" />
-              Edit Employee
-            </DialogTitle>
-            <DialogDescription className="text-slate-600">
-              Update employee information and details.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-0 border-none shadow-2xl">
+          {/* Header Section with Gradient Background */}
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 rounded-t-[2rem]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <Edit className="h-6 w-6 text-white" />
+                </div>
+                Edit Employee Profile
+              </DialogTitle>
+              <DialogDescription className="text-blue-100 font-medium mt-2">
+                Update employee information and personal details.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
           {editingEmployee && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-name" className="text-sm font-medium text-slate-700">
-                    Full Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="edit-name"
-                    placeholder="Enter full name"
-                    value={editingEmployee.name}
-                    onChange={(e) => setEditingEmployee({...editingEmployee, name: e.target.value})}
-                    className="rounded-lg mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-designation" className="text-sm font-medium text-slate-700">
-                    Designation <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="edit-designation"
-                    placeholder="Enter job title"
-                    value={editingEmployee.designation}
-                    onChange={(e) => setEditingEmployee({...editingEmployee, designation: e.target.value})}
-                    className="rounded-lg mt-1"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-department" className="text-sm font-medium text-slate-700">
-                    Department <span className="text-red-500">*</span>
-                  </Label>
-                  <Select 
-                    value={editingEmployee.department} 
-                    onValueChange={(value) => setEditingEmployee({...editingEmployee, department: value})}
-                  >
-                    <SelectTrigger className="rounded-lg mt-1">
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Engineering">Engineering</SelectItem>
-                      <SelectItem value="Product">Product</SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                      <SelectItem value="Sales">Sales</SelectItem>
-                      <SelectItem value="Human Resources">Human Resources</SelectItem>
-                      <SelectItem value="Finance">Finance</SelectItem>
-                      <SelectItem value="Operations">Operations</SelectItem>
-                      <SelectItem value="Customer Support">Customer Support</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="edit-location" className="text-sm font-medium text-slate-700">
-                    Location <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="edit-location"
-                    placeholder="Enter location"
-                    value={editingEmployee.location}
-                    onChange={(e) => setEditingEmployee({...editingEmployee, location: e.target.value})}
-                    className="rounded-lg mt-1"
-                  />
+            <div className="px-8 py-6 space-y-6">
+              {/* Personal Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Personal Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-name" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Full Name <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="edit-name"
+                      placeholder="Enter full name"
+                      value={editingEmployee.name}
+                      onChange={(e) => setEditingEmployee({...editingEmployee, name: e.target.value})}
+                      className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-designation" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Designation <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="edit-designation"
+                      placeholder="Enter job title"
+                      value={editingEmployee.designation}
+                      onChange={(e) => setEditingEmployee({...editingEmployee, designation: e.target.value})}
+                      className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-email" className="text-sm font-medium text-slate-700">
-                    Email Address <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="edit-email"
-                    type="email"
-                    placeholder="Enter email address"
-                    value={editingEmployee.email}
-                    onChange={(e) => setEditingEmployee({...editingEmployee, email: e.target.value})}
-                    className="rounded-lg mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-phone" className="text-sm font-medium text-slate-700">
-                    Phone Number <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="edit-phone"
-                    placeholder="Enter phone number"
-                    value={editingEmployee.phone}
-                    onChange={(e) => setEditingEmployee({...editingEmployee, phone: e.target.value})}
-                    className="rounded-lg mt-1"
-                  />
+
+              {/* Work Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2 pt-4 border-t">
+                  <Briefcase className="h-4 w-4" />
+                  Work Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-department" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Department <span className="text-red-500">*</span>
+                    </Label>
+                    <Select 
+                      value={editingEmployee.department} 
+                      onValueChange={(value) => setEditingEmployee({...editingEmployee, department: value})}
+                    >
+                      <SelectTrigger className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="Engineering">Engineering</SelectItem>
+                        <SelectItem value="Product">Product</SelectItem>
+                        <SelectItem value="Design">Design</SelectItem>
+                        <SelectItem value="Marketing">Marketing</SelectItem>
+                        <SelectItem value="Sales">Sales</SelectItem>
+                        <SelectItem value="Human Resources">Human Resources</SelectItem>
+                        <SelectItem value="Finance">Finance</SelectItem>
+                        <SelectItem value="Operations">Operations</SelectItem>
+                        <SelectItem value="Customer Support">Customer Support</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-location" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Work Location <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="edit-location"
+                      placeholder="Enter location"
+                      value={editingEmployee.location}
+                      onChange={(e) => setEditingEmployee({...editingEmployee, location: e.target.value})}
+                      className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="edit-joining" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Joining Date
+                    </Label>
+                    <Input
+                      id="edit-joining"
+                      type="date"
+                      value={editingEmployee.joining}
+                      onChange={(e) => setEditingEmployee({...editingEmployee, joining: e.target.value})}
+                      className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
+                    />
+                  </div>
                 </div>
               </div>
-              <div>
-                <Label htmlFor="edit-joining" className="text-sm font-medium text-slate-700">Joining Date</Label>
-                <Input
-                  id="edit-joining"
-                  type="date"
-                  value={editingEmployee.joining}
-                  onChange={(e) => setEditingEmployee({...editingEmployee, joining: e.target.value})}
-                  className="rounded-lg mt-1"
-                />
+
+              {/* Contact Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2 pt-4 border-t">
+                  <Phone className="h-4 w-4" />
+                  Contact Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-email" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Email Address <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      placeholder="Enter email address"
+                      value={editingEmployee.email}
+                      onChange={(e) => setEditingEmployee({...editingEmployee, email: e.target.value})}
+                      className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-phone" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Phone Number <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="edit-phone"
+                      placeholder="Enter phone number"
+                      value={editingEmployee.phone}
+                      onChange={(e) => setEditingEmployee({...editingEmployee, phone: e.target.value})}
+                      className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -2854,7 +2887,7 @@ export default function HRMEmployees() {
               Cancel
             </Button>
             <Button 
-              onClick={() => void handleUpdateEmployee()}
+              onClick={handleUpdateEmployee}
               className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               Update Employee
@@ -2883,8 +2916,34 @@ function EmployeeCard({
   uploadingPhoto: string | null
 }) {
   const { toast } = useToast();
+  const [isOverviewDialogOpen, setIsOverviewDialogOpen] = useState(false);
   const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
   const [exitReason, setExitReason] = useState('');
+
+  // Calculate employee tenure
+  const calculateTenure = (joiningDate: string) => {
+    const start = new Date(joiningDate);
+    const now = new Date();
+    const years = now.getFullYear() - start.getFullYear();
+    const months = now.getMonth() - start.getMonth();
+    const totalMonths = years * 12 + months;
+    
+    if (totalMonths < 1) return "Less than a month";
+    if (totalMonths < 12) return `${totalMonths} month${totalMonths > 1 ? 's' : ''}`;
+    
+    const remainingMonths = totalMonths % 12;
+    return `${Math.floor(totalMonths / 12)} year${Math.floor(totalMonths / 12) > 1 ? 's' : ''}${remainingMonths > 0 ? ` ${remainingMonths} month${remainingMonths > 1 ? 's' : ''}` : ''}`;
+  };
+
+  // Copy to clipboard handler
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied to clipboard",
+      description: `${label} copied successfully`,
+      duration: 2000,
+    });
+  };
   
   const handleInitiateExit = () => {
     // Validation
@@ -3031,7 +3090,7 @@ function EmployeeCard({
           {statusConfig[employee.status].label}
         </Badge>
         
-        <Dialog>
+        <Dialog open={isOverviewDialogOpen} onOpenChange={setIsOverviewDialogOpen}>
           <DialogTrigger asChild>
             <Button 
               variant="outline" 
@@ -3060,6 +3119,10 @@ function EmployeeCard({
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                     <p className="text-slate-500 font-medium text-xs">{employee.id}</p>
                   </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                    <p className="text-slate-600 text-xs font-semibold">Tenure: {calculateTenure(employee.joining)}</p>
+                  </div>
                 </div>
                 <Badge className={cn("rounded-xl px-4 py-1.5 font-bold text-[10px] uppercase shadow-sm", statusConfig[employee.status].class)}>
                   {statusConfig[employee.status].label}
@@ -3069,11 +3132,72 @@ function EmployeeCard({
               <div className="grid grid-cols-2 gap-4 mb-10">
                 <ProfileInfoItem icon={<Building2 />} label="Department" value={employee.department} />
                 <ProfileInfoItem icon={<MapPin />} label="Work Location" value={employee.location} />
-                <ProfileInfoItem icon={<Mail />} label="Official Email" value={employee.email} color="bg-blue-50 text-blue-600" />
-                <ProfileInfoItem icon={<Phone />} label="Phone Number" value={employee.phone} color="bg-emerald-50 text-emerald-600" />
+                
+                <div className="flex items-start gap-4 p-4 rounded-2xl border border-slate-100/80 bg-slate-50/30 hover:bg-white hover:border-blue-100 transition-all group/info cursor-pointer"
+                  onClick={() => copyToClipboard(employee.email, "Email")}>
+                  <div className="p-2.5 rounded-xl mt-0.5 transition-colors group-hover/info:scale-110 bg-blue-50 text-blue-600">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Official Email</label>
+                    <p className="text-sm font-bold text-slate-800 truncate">{employee.email}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Click to copy</p>
+                  </div>
+                  <Copy className="h-4 w-4 text-slate-400 mt-6 opacity-0 group-hover/info:opacity-100 transition-opacity" />
+                </div>
+                
+                <div className="flex items-start gap-4 p-4 rounded-2xl border border-slate-100/80 bg-slate-50/30 hover:bg-white hover:border-emerald-100 transition-all group/info cursor-pointer"
+                  onClick={() => copyToClipboard(employee.phone, "Phone number")}>
+                  <div className="p-2.5 rounded-xl mt-0.5 transition-colors group-hover/info:scale-110 bg-emerald-50 text-emerald-600">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Phone Number</label>
+                    <p className="text-sm font-bold text-slate-800 truncate">{employee.phone}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Click to copy</p>
+                  </div>
+                  <Copy className="h-4 w-4 text-slate-400 mt-6 opacity-0 group-hover/info:opacity-100 transition-opacity" />
+                </div>
+                
                 <ProfileInfoItem icon={<Calendar />} label="Joining Date" value={new Date(employee.joining).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} />
                 <ProfileInfoItem icon={<Briefcase />} label="Employment Type" value="Full Time" />
               </div>
+
+              {/* Quick Actions Bar */}
+              {employee.status !== 'exit' && (
+                <div className="mb-8 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">Quick Actions</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-12 flex-col gap-1 hover:bg-white hover:border-blue-300"
+                      onClick={() => window.open(`mailto:${employee.email}`)}
+                    >
+                      <Mail className="h-4 w-4 text-blue-600" />
+                      <span className="text-[10px] font-semibold">Send Email</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-12 flex-col gap-1 hover:bg-white hover:border-emerald-300"
+                      onClick={() => window.open(`tel:${employee.phone}`)}
+                    >
+                      <Phone className="h-4 w-4 text-emerald-600" />
+                      <span className="text-[10px] font-semibold">Call</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-12 flex-col gap-1 hover:bg-white hover:border-purple-300"
+                      onClick={() => toast({ title: "Documents", description: "Opening employee documents..." })}
+                    >
+                      <FileText className="h-4 w-4 text-purple-600" />
+                      <span className="text-[10px] font-semibold">Documents</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {employee.status === 'exit' && employee.exitWorkflow && (
                 <div className="mb-8 p-6 bg-rose-50 rounded-3xl border border-rose-100">
@@ -3097,19 +3221,26 @@ function EmployeeCard({
                 </div>
               )}
 
-              <div className="flex gap-4">
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700 rounded-2xl py-7 h-auto font-bold shadow-lg shadow-blue-200 transition-all active:scale-[0.98]">
+              <div className="flex gap-3">
+                <Button 
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-2xl py-7 h-auto font-bold shadow-lg shadow-blue-200 transition-all active:scale-[0.98] hover:shadow-xl"
+                  onClick={() => {
+                    setIsOverviewDialogOpen(false);
+                    onEdit(employee);
+                  }}
+                >
                   <Edit className="h-5 w-5 mr-3" />
                   Edit Profile
                 </Button>
                 
-                <Dialog open={isExitDialogOpen} onOpenChange={setIsExitDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="flex-1 rounded-2xl py-7 h-auto text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 font-bold transition-all active:scale-[0.98]">
-                      <Trash2 className="h-5 w-5 mr-3" />
-                      Exit Process
-                    </Button>
-                  </DialogTrigger>
+                {employee.status !== 'exit' && (
+                  <Dialog open={isExitDialogOpen} onOpenChange={setIsExitDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="flex-1 rounded-2xl py-7 h-auto text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 font-bold transition-all active:scale-[0.98]">
+                        <Trash2 className="h-5 w-5 mr-3" />
+                        Exit Process
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="max-w-md rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
                     <div className="h-24 bg-gradient-to-r from-rose-600 to-rose-700 p-6">
                       <DialogTitle className="text-2xl font-bold text-white tracking-tight">Exit Process</DialogTitle>
@@ -3165,6 +3296,7 @@ function EmployeeCard({
                     </div>
                   </DialogContent>
                 </Dialog>
+                )}
               </div>
             </div>
           </DialogContent>

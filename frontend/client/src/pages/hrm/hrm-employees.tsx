@@ -8,11 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  Download, 
+import {
+  Users,
+  Plus,
+  Search,
+  Download,
   Filter,
   Edit,
   MoreVertical,
@@ -41,23 +41,23 @@ import {
   Copy,
   User
 } from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
@@ -127,8 +127,10 @@ export default function HRMEmployees() {
     panDoc: null as File | null,
     resume: null as File | null
   });
-  
+
   const { toast } = useToast();
+  const [employees, setEmployees] = useState<any[]>([]);
+
 
   // ── Fetch employees from Supabase via backend on mount ──────────────────
   useEffect(() => {
@@ -162,16 +164,16 @@ export default function HRMEmployees() {
         );
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const generatePDFReport = (employee: any, type: 'clearance' | 'report' = 'report') => {
     const doc = new jsPDF();
-    
+
     // Header
     doc.setFontSize(20);
     doc.setTextColor(220, 38, 127); // Rose color
     doc.text('Exit Management Report', 20, 30);
-    
+
     // Employee Info
     doc.setFontSize(14);
     doc.setTextColor(0, 0, 0);
@@ -179,13 +181,13 @@ export default function HRMEmployees() {
     doc.text(`ID: ${employee.id}`, 20, 60);
     doc.text(`Department: ${employee.department}`, 20, 70);
     doc.text(`Designation: ${employee.designation}`, 20, 80);
-    
+
     if (employee.exitWorkflow) {
       doc.text(`Exit Reason: ${employee.exitWorkflow.reason}`, 20, 100);
       doc.text(`Priority: ${employee.exitWorkflow.priority}`, 20, 110);
       doc.text(`Progress: ${employee.exitWorkflow.progress}%`, 20, 120);
       doc.text(`Status: ${employee.exitWorkflow.status}`, 20, 130);
-      
+
       // Steps table
       const tableData = employee.exitWorkflow.steps.map((step: any) => [
         step.name,
@@ -193,7 +195,7 @@ export default function HRMEmployees() {
         step.status,
         step.completedBy || 'Pending'
       ]);
-      
+
       autoTable(doc, {
         head: [['Step', 'Department', 'Status', 'Completed By']],
         body: tableData,
@@ -202,12 +204,12 @@ export default function HRMEmployees() {
         headStyles: { fillColor: [220, 38, 127] }
       });
     }
-    
+
     // Save the PDF
-    const filename = type === 'clearance' 
+    const filename = type === 'clearance'
       ? `${employee.name}_Clearance_${new Date().toISOString().split('T')[0]}.pdf`
       : `Exit_Report_${employee.name}_${new Date().toISOString().split('T')[0]}.pdf`;
-    
+
     doc.save(filename);
   };
 
@@ -215,7 +217,7 @@ export default function HRMEmployees() {
   const generateExcelReport = () => {
     const exitEmployees = employees.filter(emp => emp.status === 'exit');
     const workbook = XLSX.utils.book_new();
-    
+
     // Main data
     const mainData = exitEmployees.map(emp => ({
       'Employee ID': emp.id,
@@ -229,10 +231,10 @@ export default function HRMEmployees() {
       'Initiated Date': emp.exitWorkflow?.initiatedAt ? new Date(emp.exitWorkflow.initiatedAt).toLocaleDateString() : 'N/A',
       'Expected Last Day': emp.exitWorkflow?.expectedLastDay ? new Date(emp.exitWorkflow.expectedLastDay).toLocaleDateString() : 'N/A'
     }));
-    
+
     const worksheet = XLSX.utils.json_to_sheet(mainData);
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Exit Management');
-    
+
     // Assets data
     const assetsData: any[] = [];
     exitEmployees.forEach(emp => {
@@ -246,12 +248,12 @@ export default function HRMEmployees() {
         });
       });
     });
-    
+
     if (assetsData.length > 0) {
       const assetsWorksheet = XLSX.utils.json_to_sheet(assetsData);
       XLSX.utils.book_append_sheet(workbook, assetsWorksheet, 'Assets');
     }
-    
+
     XLSX.writeFile(workbook, `Exit_Management_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
@@ -259,15 +261,15 @@ export default function HRMEmployees() {
   const handleButtonAction = async (action: string, employeeId?: string) => {
     const loadingKey = employeeId ? `${action}_${employeeId}` : action;
     setLoadingStates(prev => ({ ...prev, [loadingKey]: true }));
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API call
-      
+      // API call placeholder for consistency
+
       switch (action) {
         case 'initiate_exit':
           setIsExitDialogOpen(true);
           break;
-          
+
         case 'schedule_interview':
           if (employeeId) {
             const employee = employees.find(emp => emp.id === employeeId);
@@ -275,7 +277,7 @@ export default function HRMEmployees() {
           }
           setIsInterviewDialogOpen(true);
           break;
-          
+
         case 'export_report':
           if (employeeId) {
             const employee = employees.find(emp => emp.id === employeeId);
@@ -288,7 +290,7 @@ export default function HRMEmployees() {
             description: "Your report has been downloaded successfully.",
           });
           break;
-          
+
         case 'export_clearance':
           if (employeeId) {
             const employee = employees.find(emp => emp.id === employeeId);
@@ -299,7 +301,7 @@ export default function HRMEmployees() {
             description: "Employee clearance PDF has been downloaded.",
           });
           break;
-          
+
         case 'view_details':
           if (employeeId) {
             const employee = employees.find(emp => emp.id === employeeId);
@@ -307,7 +309,7 @@ export default function HRMEmployees() {
             setIsDetailsModalOpen(true);
           }
           break;
-          
+
         case 'view_profile':
           if (employeeId) {
             const employee = employees.find(emp => emp.id === employeeId);
@@ -315,81 +317,88 @@ export default function HRMEmployees() {
             setIsProfileModalOpen(true);
           }
           break;
-          
+
         case 'view_past_exits':
           setIsPastExitsModalOpen(true);
           break;
-          
+
         case 'initialize_workflow':
           if (employeeId) {
-            const updatedEmployees = employees.map(emp => 
-              emp.id === employeeId 
-                ? { 
-                    ...emp, 
-                    status: 'exit',
-                    exitWorkflow: {
-                      id: `EXIT${String(Date.now()).slice(-3)}`,
-                      reason: 'To be determined',
-                      type: 'voluntary',
-                      priority: 'medium',
-                      initiatedAt: new Date().toISOString(),
-                      expectedLastDay: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                      status: 'pending_approvals',
-                      progress: 15,
-                      assignedHR: 'Emily Davis',
-                      exitInterviewScheduled: false,
-                      steps: [
-                        {
-                          id: 1,
-                          name: 'Manager Approval',
-                          department: 'Management',
-                          status: 'pending',
-                          priority: 'high',
-                          assignedTo: 'Direct Manager',
-                          dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                          details: 'Manager approval for exit request',
-                          documents: []
-                        },
-                        {
-                          id: 2,
-                          name: 'HR Documentation',
-                          department: 'Human Resources',
-                          status: 'not_started',
-                          priority: 'medium',
-                          assignedTo: 'Emily Davis',
-                          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                          details: 'Prepare exit documentation and paperwork',
-                          documents: []
-                        },
-                        {
-                          id: 3,
-                          name: 'IT Asset Return',
-                          department: 'IT Department',
-                          status: 'not_started',
-                          priority: 'high',
-                          assignedTo: 'IT Admin',
-                          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                          details: 'Return all IT equipment and assets',
-                          documents: []
-                        }
-                      ],
-                      assets: [
-                        { id: 1, name: 'Company Laptop', serialNumber: 'LAP001', status: 'assigned' },
-                        { id: 2, name: 'Access Card', serialNumber: 'ACC001', status: 'assigned' }
-                      ],
-                      knowledgeTransfer: { status: 'not_started', sessions: [], documents: [] }
-                    }
-                  }
+            const exitWorkflow = {
+              id: `EXIT${String(Date.now()).slice(-3)}`,
+              reason: 'To be determined',
+              type: 'voluntary',
+              priority: 'medium',
+              initiatedAt: new Date().toISOString(),
+              expectedLastDay: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'pending_approvals',
+              progress: 15,
+              assignedHR: 'Emily Davis',
+              exitInterviewScheduled: false,
+              steps: [
+                {
+                  id: 1,
+                  name: 'Manager Approval',
+                  department: 'Management',
+                  status: 'pending',
+                  priority: 'high',
+                  assignedTo: 'Direct Manager',
+                  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+                  details: 'Manager approval for exit request',
+                  documents: []
+                },
+                {
+                  id: 2,
+                  name: 'HR Documentation',
+                  department: 'Human Resources',
+                  status: 'not_started',
+                  priority: 'medium',
+                  assignedTo: 'Emily Davis',
+                  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                  details: 'Prepare exit documentation and paperwork',
+                  documents: []
+                },
+                {
+                  id: 3,
+                  name: 'IT Asset Return',
+                  department: 'IT Department',
+                  status: 'not_started',
+                  priority: 'high',
+                  assignedTo: 'IT Admin',
+                  dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                  details: 'Return all IT equipment and assets',
+                  documents: []
+                }
+              ],
+              assets: [
+                { id: 1, name: 'Company Laptop', serialNumber: 'LAP001', status: 'assigned' },
+                { id: 2, name: 'Access Card', serialNumber: 'ACC001', status: 'assigned' }
+              ],
+              knowledgeTransfer: { status: 'not_started', sessions: [], documents: [] }
+            };
+
+            const { error } = await adminUpdateEmployee(employeeId, {
+              status: 'exit',
+              exit_workflow: exitWorkflow as any
+            });
+
+            if (error) {
+              toast({ title: "Failed to initialize workflow", description: error, variant: "destructive" });
+              return;
+            }
+
+            setEmployees(prev => prev.map(emp =>
+              emp.id === employeeId
+                ? { ...emp, status: 'exit', exitWorkflow }
                 : emp
-            );
-            setEmployees(updatedEmployees);
+            ));
             toast({
               title: "Exit Workflow Created",
               description: "Employee has been moved to exit process with initial workflow.",
             });
           }
           break;
-          
+
         case 'delete_employee':
           if (employeeId) {
             const empToDelete = employees.find(emp => emp.id === employeeId);
@@ -424,25 +433,25 @@ export default function HRMEmployees() {
     }
   };
 
+
   // Photo upload handler
   const handlePhotoUpload = async (employeeId: string, file: File) => {
     setUploadingPhoto(employeeId);
-    
+
     try {
-      // Simulate upload process
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      // API call placeholder
+
       // Create photo URL from file
       const photoUrl = URL.createObjectURL(file);
-      
+
       // Update employee with photo
-      const updatedEmployees = employees.map(emp => 
-        emp.id === employeeId 
+      const updatedEmployees = employees.map(emp =>
+        emp.id === employeeId
           ? { ...emp, photoUrl }
           : emp
       );
       setEmployees(updatedEmployees);
-      
+
       toast({
         title: "✅ Photo Updated Successfully",
         description: "Employee photo has been uploaded and updated.",
@@ -467,174 +476,167 @@ export default function HRMEmployees() {
     setIsEditDialogOpen(true);
   };
 
-  // Update employee handler
   const handleUpdateEmployee = () => {
     if (!editingEmployee) return;
 
-    // Validation
-    if (!editingEmployee.name || !editingEmployee.designation || !editingEmployee.department || 
-        !editingEmployee.location || !editingEmployee.email || !editingEmployee.phone) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
+    const updateData = {
+      full_name: editingEmployee.name.trim(),
+      designation: editingEmployee.designation.trim(),
+      department: editingEmployee.department,
+      location: editingEmployee.location.trim(),
+      email: editingEmployee.email.trim().toLowerCase(),
+      phone: editingEmployee.phone.trim(),
+      join_date: editingEmployee.joining,
+    };
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(editingEmployee.email)) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid email address.",
-        variant: "destructive"
-      });
-      return;
-    }
+    setLoadingStates(prev => ({ ...prev, update_employee: true }));
+    void (async () => {
+      const { data, error } = await adminUpdateEmployee(editingEmployee.id, updateData);
+      setLoadingStates(prev => ({ ...prev, update_employee: false }));
 
-    const updatedEmployees = employees.map(emp => 
-      emp.id === editingEmployee.id 
-        ? { 
+      if (error) {
+        toast({ title: "Update Failed", description: error, variant: "destructive" });
+        return;
+      }
+
+      setEmployees(prev => prev.map(emp =>
+        emp.id === editingEmployee.id
+          ? {
             ...emp,
-            name: editingEmployee.name.trim(),
-            designation: editingEmployee.designation.trim(),
-            department: editingEmployee.department,
-            location: editingEmployee.location.trim(),
-            email: editingEmployee.email.trim().toLowerCase(),
-            phone: editingEmployee.phone.trim(),
-            joining: editingEmployee.joining,
-            avatar: editingEmployee.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
+            ...updateData,
+            name: updateData.full_name,
+            avatar: updateData.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
           }
-        : emp
-    );
-    
-    setEmployees(updatedEmployees);
-    setIsEditDialogOpen(false);
-    setEditingEmployee(null);
-    
-    toast({
-      title: "✅ Employee Updated Successfully",
-      description: `${editingEmployee.name}'s information has been updated.`,
-    });
+          : emp
+      ));
+      setIsEditDialogOpen(false);
+      setEditingEmployee(null);
+
+      toast({
+        title: "✅ Employee Updated Successfully",
+        description: `${editingEmployee.name}'s information has been updated.`,
+      });
+    })();
   };
 
-  // Create exit workflow
   const createExitWorkflow = () => {
-    if (!exitFormData.employeeId || !exitFormData.reason || !exitFormData.lastWorkingDay) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
+    const emp = employees.find(e => e.id === exitFormData.employeeId);
+    if (!emp) return;
 
-    const updatedEmployees = employees.map(emp => 
-      emp.id === exitFormData.employeeId 
-        ? {
-            ...emp,
-            status: 'exit',
-            exitWorkflow: {
-              id: `EXIT${String(Date.now()).slice(-3)}`,
-              reason: exitFormData.reason,
-              type: exitFormData.type,
-              priority: exitFormData.priority,
-              initiatedAt: new Date().toISOString(),
-              expectedLastDay: new Date(exitFormData.lastWorkingDay).toISOString(),
-              status: 'pending_approvals',
-              progress: 10,
-              assignedHR: exitFormData.assignedHR === 'emily_davis' ? 'Emily Davis' : 'HR Team',
-              exitInterviewScheduled: false,
-              steps: [
-                {
-                  id: 1,
-                  name: 'Manager Approval',
-                  department: 'Management',
-                  status: 'pending',
-                  priority: 'high',
-                  assignedTo: 'Direct Manager',
-                  dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-                  details: 'Manager approval for exit request',
-                  documents: [],
-                  completedAt: undefined,
-                  completedBy: undefined
-                },
-                {
-                  id: 2,
-                  name: 'HR Exit Interview',
-                  department: 'Human Resources',
-                  status: 'not_started',
-                  priority: 'medium',
-                  assignedTo: exitFormData.assignedHR === 'emily_davis' ? 'Emily Davis' : 'HR Team',
-                  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                  details: '',
-                  documents: []
-                },
-                {
-                  id: 3,
-                  name: 'Project Handover',
-                  department: emp.department,
-                  status: 'not_started',
-                  priority: 'high',
-                  assignedTo: 'Team Lead',
-                  dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-                  details: '',
-                  documents: []
-                },
-                {
-                  id: 4,
-                  name: 'IT Asset Return',
-                  department: 'IT Department',
-                  status: 'not_started',
-                  priority: 'high',
-                  assignedTo: 'IT Admin',
-                  dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                  details: '',
-                  documents: []
-                },
-                {
-                  id: 5,
-                  name: 'Finance Clearance',
-                  department: 'Finance',
-                  status: 'not_started',
-                  priority: 'medium',
-                  assignedTo: 'Finance Team',
-                  dueDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-                  details: '',
-                  documents: []
-                }
-              ],
-              assets: [
-                { id: 1, name: 'Company Laptop', serialNumber: 'LAP001', status: 'assigned' },
-                { id: 2, name: 'Access Card', serialNumber: 'ACC001', status: 'assigned' },
-                { id: 3, name: 'Company Phone', serialNumber: 'PH001', status: 'assigned' }
-              ],
-              knowledgeTransfer: {
-                status: 'not_started',
-                sessions: [],
-                documents: []
-              }
-            }
-          }
-        : emp
-    );
-    
-    setEmployees(updatedEmployees);
-    setIsExitDialogOpen(false);
-    setExitFormData({
-      employeeId: '',
-      reason: '',
-      type: '',
-      priority: '',
-      lastWorkingDay: '',
-      assignedHR: 'emily_davis'
-    });
-    
-    toast({
-      title: "Exit Workflow Created",
-      description: "Employee exit process has been initiated successfully.",
-    });
+    const exitWorkflow = {
+      id: `EXIT${String(Date.now()).slice(-3)}`,
+      reason: exitFormData.reason,
+      type: exitFormData.type,
+      priority: exitFormData.priority,
+      initiatedAt: new Date().toISOString(),
+      expectedLastDay: new Date(exitFormData.lastWorkingDay).toISOString(),
+      status: 'pending_approvals',
+      progress: 10,
+      assignedHR: exitFormData.assignedHR === 'emily_davis' ? 'Emily Davis' : 'HR Team',
+      exitInterviewScheduled: false,
+      steps: [
+        {
+          id: 1,
+          name: 'Manager Approval',
+          department: 'Management',
+          status: 'pending',
+          priority: 'high',
+          assignedTo: 'Direct Manager',
+          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          details: 'Manager approval for exit request',
+          documents: [],
+        },
+        {
+          id: 2,
+          name: 'HR Exit Interview',
+          department: 'Human Resources',
+          status: 'not_started',
+          priority: 'medium',
+          assignedTo: exitFormData.assignedHR === 'emily_davis' ? 'Emily Davis' : 'HR Team',
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          details: '',
+          documents: []
+        },
+        {
+          id: 3,
+          name: 'Project Handover',
+          department: emp.department,
+          status: 'not_started',
+          priority: 'high',
+          assignedTo: 'Team Lead',
+          dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+          details: '',
+          documents: []
+        },
+        {
+          id: 4,
+          name: 'IT Asset Return',
+          department: 'IT Department',
+          status: 'not_started',
+          priority: 'high',
+          assignedTo: 'IT Admin',
+          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          details: '',
+          documents: []
+        },
+        {
+          id: 5,
+          name: 'Finance Clearance',
+          department: 'Finance',
+          status: 'not_started',
+          priority: 'medium',
+          assignedTo: 'Finance Team',
+          dueDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+          details: '',
+          documents: []
+        }
+      ],
+      assets: [
+        { id: 1, name: 'Company Laptop', serialNumber: 'LAP001', status: 'assigned' },
+        { id: 2, name: 'Access Card', serialNumber: 'ACC001', status: 'assigned' },
+        { id: 3, name: 'Company Phone', serialNumber: 'PH001', status: 'assigned' }
+      ],
+      knowledgeTransfer: {
+        status: 'not_started',
+        sessions: [],
+        documents: []
+      }
+    };
+
+    setLoadingStates(prev => ({ ...prev, create_exit: true }));
+    void (async () => {
+      const { error } = await adminUpdateEmployee(exitFormData.employeeId, {
+        status: 'exit',
+        exit_workflow: exitWorkflow as any
+      });
+      setLoadingStates(prev => ({ ...prev, create_exit: false }));
+
+      if (error) {
+        toast({ title: "Failed to initiate exit", description: error, variant: "destructive" });
+        return;
+      }
+
+      setEmployees(prev => prev.map(e =>
+        e.id === exitFormData.employeeId
+          ? { ...e, status: 'exit', exitWorkflow }
+          : e
+      ));
+
+      setIsExitDialogOpen(false);
+      setExitFormData({
+        employeeId: '',
+        reason: '',
+        type: '',
+        priority: '',
+        lastWorkingDay: '',
+        assignedHR: 'emily_davis'
+      });
+
+      toast({
+        title: "Exit Workflow Created",
+        description: "Employee exit process has been initiated successfully.",
+      });
+    })();
   };
 
   // Schedule interview
@@ -649,31 +651,31 @@ export default function HRMEmployees() {
     }
 
     if (selectedEmployee) {
-      const updatedEmployees = employees.map(emp => 
+      const updatedEmployees = employees.map(emp =>
         emp.id === selectedEmployee.id && emp.exitWorkflow
           ? {
-              ...emp,
-              exitWorkflow: {
-                ...emp.exitWorkflow,
-                exitInterviewScheduled: true,
-                exitInterviewDate: `${interviewFormData.date}T${interviewFormData.time}:00Z`,
-                interviewer: interviewFormData.interviewer,
-                meetingType: interviewFormData.meetingType,
-                steps: emp.exitWorkflow.steps.map(step => ({
-                  ...step,
-                  documents: step.documents || []
-                }))
-              }
+            ...emp,
+            exitWorkflow: {
+              ...emp.exitWorkflow,
+              exitInterviewScheduled: true,
+              exitInterviewDate: `${interviewFormData.date}T${interviewFormData.time}:00Z`,
+              interviewer: interviewFormData.interviewer,
+              meetingType: interviewFormData.meetingType,
+              steps: emp.exitWorkflow.steps.map((step: any) => ({
+                ...step,
+                documents: step.documents || []
+              }))
             }
+          }
           : emp
       );
-      
+
       setEmployees(updatedEmployees);
     }
-    
+
     setIsInterviewDialogOpen(false);
     setInterviewFormData({ date: '', time: '', interviewer: '', meetingType: '', notes: '' });
-    
+
     toast({
       title: "Interview Scheduled",
       description: "Exit interview has been scheduled successfully.",
@@ -684,20 +686,20 @@ export default function HRMEmployees() {
   const completeStep = (employeeId: string, stepId: number) => {
     const updatedEmployees = employees.map(emp => {
       if (emp.id === employeeId && emp.exitWorkflow) {
-        const updatedSteps = emp.exitWorkflow.steps.map((step: any) => 
-          step.id === stepId 
-            ? { 
-                ...step, 
-                status: 'completed',
-                completedAt: new Date().toISOString(),
-                completedBy: 'Current User'
-              }
+        const updatedSteps = emp.exitWorkflow.steps.map((step: any) =>
+          step.id === stepId
+            ? {
+              ...step,
+              status: 'completed',
+              completedAt: new Date().toISOString(),
+              completedBy: 'Current User'
+            }
             : step
         );
-        
+
         const completedCount = updatedSteps.filter((s: any) => s.status === 'completed').length;
         const progress = Math.round((completedCount / updatedSteps.length) * 100);
-        
+
         return {
           ...emp,
           exitWorkflow: {
@@ -710,7 +712,7 @@ export default function HRMEmployees() {
       }
       return emp;
     });
-    
+
     setEmployees(updatedEmployees);
     toast({
       title: "Step Completed",
@@ -722,16 +724,16 @@ export default function HRMEmployees() {
   const returnAsset = (employeeId: string, assetId: number) => {
     const updatedEmployees = employees.map(emp => {
       if (emp.id === employeeId && emp.exitWorkflow?.assets) {
-        const updatedAssets = emp.exitWorkflow.assets.map((asset: any) => 
-          asset.id === assetId 
-            ? { 
-                ...asset, 
-                status: 'returned',
-                returnedDate: new Date().toISOString()
-              }
+        const updatedAssets = emp.exitWorkflow.assets.map((asset: any) =>
+          asset.id === assetId
+            ? {
+              ...asset,
+              status: 'returned',
+              returnedDate: new Date().toISOString()
+            }
             : asset
         );
-        
+
         return {
           ...emp,
           exitWorkflow: {
@@ -742,7 +744,7 @@ export default function HRMEmployees() {
       }
       return emp;
     });
-    
+
     setEmployees(updatedEmployees);
     toast({
       title: "Asset Returned",
@@ -750,253 +752,6 @@ export default function HRMEmployees() {
     });
   };
 
-  const [employees, setEmployees] = useState([
-    {
-      id: 'EMP001',
-      name: 'John Smith',
-      designation: 'Senior Software Engineer',
-      department: 'Engineering',
-      location: 'New York',
-      joining: '2023-05-15',
-      status: 'active',
-      avatar: 'JS',
-      email: 'john.smith@company.com',
-      phone: '+1 234 567 8900',
-      exitWorkflow: null
-    },
-    {
-      id: 'EMP002',
-      name: 'Sarah Johnson',
-      designation: 'Product Manager',
-      department: 'Product',
-      location: 'San Francisco',
-      joining: '2022-08-20',
-      status: 'active',
-      avatar: 'SJ',
-      email: 'sarah.j@company.com',
-      phone: '+1 234 567 8901',
-      exitWorkflow: null
-    },
-    {
-      id: 'EMP003',
-      name: 'Mike Brown',
-      designation: 'UI/UX Designer',
-      department: 'Design',
-      location: 'Remote',
-      joining: '2024-01-10',
-      status: 'probation',
-      avatar: 'MB',
-      email: 'mike.brown@company.com',
-      phone: '+1 234 567 8902',
-      exitWorkflow: null
-    },
-    {
-      id: 'EMP004',
-      name: 'Emily Davis',
-      designation: 'HR Manager',
-      department: 'Human Resources',
-      location: 'New York',
-      joining: '2021-03-12',
-      status: 'active',
-      avatar: 'ED',
-      email: 'emily.davis@company.com',
-      phone: '+1 234 567 8903',
-      exitWorkflow: null
-    },
-    {
-      id: 'EMP005',
-      name: 'Alex Wilson',
-      designation: 'Sales Executive',
-      department: 'Sales',
-      location: 'Chicago',
-      joining: '2020-12-01',
-      status: 'onboarding',
-      avatar: 'AW',
-      email: 'alex.wilson@company.com',
-      phone: '+1 234 567 8904',
-      exitWorkflow: null
-    },
-    {
-      id: 'EMP006',
-      name: 'Lisa Anderson',
-      designation: 'Marketing Specialist',
-      department: 'Marketing',
-      location: 'Boston',
-      joining: '2023-11-05',
-      status: 'active',
-      avatar: 'LA',
-      email: 'lisa.anderson@company.com',
-      phone: '+1 234 567 8905',
-      exitWorkflow: null
-    },
-    {
-      id: 'EMP007',
-      name: 'David Chen',
-      designation: 'Senior DevOps Engineer',
-      department: 'Engineering',
-      location: 'Seattle',
-      joining: '2021-09-15',
-      status: 'exit',
-      avatar: 'DC',
-      email: 'david.chen@company.com',
-      phone: '+1 234 567 8906',
-      exitWorkflow: {
-        id: 'EXIT001',
-        reason: 'Career Growth Opportunity',
-        type: 'voluntary',
-        priority: 'high',
-        initiatedAt: '2024-01-20T08:30:00Z',
-        expectedLastDay: '2024-02-20T17:00:00Z',
-        status: 'in_progress',
-        progress: 65,
-        assignedHR: 'Emily Davis',
-        exitInterviewScheduled: true,
-        exitInterviewDate: '2024-02-15T14:00:00Z',
-        steps: [
-          {
-            id: 1,
-            name: 'IT Equipment Return',
-            department: 'IT Department',
-            status: 'completed',
-            completedAt: '2024-01-22T10:00:00Z',
-            completedBy: 'IT Admin',
-            priority: 'high',
-            details: 'Laptop, monitor, and accessories returned',
-            documents: ['Equipment Receipt', 'Asset Tag List']
-          },
-          {
-            id: 2,
-            name: 'Project Handover',
-            department: 'Engineering',
-            status: 'completed',
-            completedAt: '2024-01-25T15:30:00Z',
-            completedBy: 'John Smith',
-            priority: 'high',
-            details: 'Documentation updated, access transferred',
-            documents: ['Handover Document', 'Project Access List']
-          },
-          {
-            id: 3,
-            name: 'HR Documentation',
-            department: 'Human Resources',
-            status: 'pending',
-            assignedTo: 'Emily Davis',
-            dueDate: '2024-02-10T17:00:00Z',
-            priority: 'medium',
-            details: 'Final paperwork and clearance documents',
-            documents: [] as string[]
-          },
-          {
-            id: 4,
-            name: 'Finance Clearance',
-            department: 'Finance',
-            status: 'pending',
-            assignedTo: 'Finance Team',
-            dueDate: '2024-02-15T17:00:00Z',
-            priority: 'medium',
-            details: 'Final salary, benefits, and reimbursements',
-            documents: [] as string[]
-          },
-          {
-            id: 5,
-            name: 'Access Revocation',
-            department: 'Security',
-            status: 'not_started',
-            assignedTo: 'Security Team',
-            dueDate: '2024-02-20T17:00:00Z',
-            priority: 'high',
-            details: 'Revoke all system and building access',
-            documents: [] as string[]
-          }
-        ],
-        assets: [
-          { id: 1, name: 'MacBook Pro 16"', serialNumber: 'MBP001', status: 'returned', returnedDate: '2024-01-22T10:00:00Z' },
-          { id: 2, name: 'External Monitor 27"', serialNumber: 'MON001', status: 'returned', returnedDate: '2024-01-22T10:00:00Z' },
-          { id: 3, name: 'Access Card', serialNumber: 'ACC001', status: 'pending_return' },
-          { id: 4, name: 'Company Phone', serialNumber: 'PH001', status: 'returned', returnedDate: '2024-01-22T10:00:00Z' }
-        ],
-        knowledgeTransfer: {
-          status: 'completed',
-          sessions: [
-            { date: '2024-01-23', topic: 'Infrastructure Setup', attendees: ['John Smith', 'Sarah Johnson'], duration: '2 hours' },
-            { date: '2024-01-24', topic: 'Deployment Processes', attendees: ['Mike Brown'], duration: '1.5 hours' }
-          ],
-          documents: ['System Architecture Guide', 'Deployment Runbook', 'Troubleshooting Guide']
-        }
-      }
-    },
-    {
-      id: 'EMP008',
-      name: 'Jennifer Lee',
-      designation: 'Marketing Manager',
-      department: 'Marketing',
-      location: 'Los Angeles',
-      joining: '2020-03-10',
-      status: 'exit',
-      avatar: 'JL',
-      email: 'jennifer.lee@company.com',
-      phone: '+1 234 567 8907',
-      exitWorkflow: {
-        id: 'EXIT002',
-        reason: 'Relocation',
-        type: 'voluntary',
-        priority: 'medium',
-        initiatedAt: '2024-01-25T14:15:00Z',
-        expectedLastDay: '2024-02-25T17:00:00Z',
-        status: 'pending_approvals',
-        progress: 25,
-        assignedHR: 'Emily Davis',
-        exitInterviewScheduled: false,
-        steps: [
-          {
-            id: 1,
-            name: 'Campaign Handover',
-            department: 'Marketing',
-            status: 'completed',
-            completedAt: '2024-01-26T11:00:00Z',
-            completedBy: 'Lisa Anderson',
-            priority: 'high',
-            details: 'Active campaigns transferred to team',
-            documents: [] as string[]
-          },
-          {
-            id: 2,
-            name: 'Client Relationship Transfer',
-            department: 'Sales',
-            status: 'pending',
-            assignedTo: 'Alex Wilson',
-            dueDate: '2024-02-05T17:00:00Z',
-            priority: 'high',
-            details: 'Transfer client relationships and ongoing projects',
-            documents: [] as string[]
-          },
-          {
-            id: 3,
-            name: 'HR Documentation',
-            department: 'Human Resources',
-            status: 'not_started',
-            assignedTo: 'Emily Davis',
-            dueDate: '2024-02-20T17:00:00Z',
-            priority: 'medium',
-            details: 'Complete exit documentation',
-            documents: [] as string[]
-          }
-        ],
-        assets: [
-          { id: 1, name: 'Company Laptop', serialNumber: 'LAP002', status: 'assigned' },
-          { id: 2, name: 'Marketing Materials', serialNumber: 'MAT001', status: 'pending_return' },
-          { id: 3, name: 'Access Card', serialNumber: 'ACC002', status: 'assigned' }
-        ],
-        knowledgeTransfer: {
-          status: 'in_progress',
-          sessions: [
-            { date: '2024-01-26', topic: 'Campaign Strategies', attendees: ['Lisa Anderson'], duration: '3 hours' }
-          ],
-          documents: ['Marketing Playbook', 'Client Contact List']
-        }
-      }
-    }
-  ]);
 
   const statusConfig: Record<string, { label: string; class: string }> = {
     active: { label: 'Active', class: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
@@ -1007,14 +762,14 @@ export default function HRMEmployees() {
 
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
-      const matchesSearch = 
+      const matchesSearch =
         emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         emp.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
         emp.email.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesTab = activeTab === 'all' || emp.status === activeTab;
       const matchesDept = departmentFilter === 'all' || emp.department === departmentFilter;
-      
+
       return matchesSearch && matchesTab && matchesDept;
     });
   }, [searchQuery, activeTab, departmentFilter, employees]);
@@ -1023,33 +778,31 @@ export default function HRMEmployees() {
     setIsExporting(true);
     toast({ title: "Exporting...", description: `Preparing employee directory in ${type.toUpperCase()}.` });
 
-    setTimeout(() => {
-      if (type === 'excel') {
-        const ws = XLSX.utils.json_to_sheet(filteredEmployees);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Employees");
-        XLSX.writeFile(wb, `Employees_${new Date().toISOString().split('T')[0]}.xlsx`);
-      } else {
-        const doc = new jsPDF();
-        doc.text("Employee Directory Report", 14, 15);
-        autoTable(doc, {
-          startY: 25,
-          head: [['ID', 'Name', 'Designation', 'Department', 'Email', 'Status']],
-          body: filteredEmployees.map(e => [e.id, e.name, e.designation, e.department, e.email, statusConfig[e.status].label]),
-        });
-        doc.save(`Employees_${new Date().toISOString().split('T')[0]}.pdf`);
-      }
-      setIsExporting(false);
-      toast({ title: "Export Ready", description: "Download started." });
-    }, 1200);
+    if (type === 'excel') {
+      const ws = XLSX.utils.json_to_sheet(filteredEmployees);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Employees");
+      XLSX.writeFile(wb, `Employees_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } else {
+      const doc = new jsPDF();
+      doc.text("Employee Directory Report", 14, 15);
+      autoTable(doc, {
+        startY: 25,
+        head: [['ID', 'Name', 'Designation', 'Department', 'Email', 'Status']],
+        body: filteredEmployees.map(e => [e.id, e.name, e.designation, e.department, e.email, statusConfig[e.status].label]),
+      });
+      doc.save(`Employees_${new Date().toISOString().split('T')[0]}.pdf`);
+    }
+    setIsExporting(false);
+    toast({ title: "Export Ready", description: "Download started." });
   };
 
   const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.designation || !newEmployee.department) {
-      toast({ 
-        title: "Validation Error", 
-        description: "Please fill in all required fields.", 
-        variant: "destructive" 
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
       });
       return;
     }
@@ -1122,7 +875,7 @@ export default function HRMEmployees() {
         toast({ title: 'Status Update Failed', description: error, variant: 'destructive' });
         return;
       }
-      setEmployees(prev => prev.map(emp => 
+      setEmployees(prev => prev.map(emp =>
         emp.id === employeeId ? { ...emp, status: newStatus, exitWorkflow: workflow || emp.exitWorkflow } : emp
       ));
       if (!workflow) {
@@ -1140,9 +893,9 @@ export default function HRMEmployees() {
         <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 -mx-6 -mt-6 px-6 py-4 mb-6 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setLocation('/hrm')}
                 className="hover:bg-slate-100 rounded-full transition-transform active:scale-95"
               >
@@ -1186,7 +939,7 @@ export default function HRMEmployees() {
 
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button 
+                  <Button
                     className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 rounded-xl font-bold transition-all active:scale-95"
                   >
                     <Plus className="h-4 w-4 mr-2" />
@@ -1198,7 +951,7 @@ export default function HRMEmployees() {
                     <DialogTitle className="text-2xl font-bold text-white tracking-tight">✨ New Employee Onboarding</DialogTitle>
                     <DialogDescription className="text-blue-100 font-medium">Complete employee profile with documents and banking details</DialogDescription>
                   </div>
-                  
+
                   <div className="overflow-y-auto max-h-[calc(90vh-200px)]">
                     <div className="p-8 space-y-6">
                       {/* Profile Photo Upload */}
@@ -1206,9 +959,9 @@ export default function HRMEmployees() {
                         <div className="relative group">
                           {newEmployee.photo ? (
                             <div className="h-24 w-24 rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow">
-                              <img 
-                                src={URL.createObjectURL(newEmployee.photo)} 
-                                alt="Profile" 
+                              <img
+                                src={URL.createObjectURL(newEmployee.photo)}
+                                alt="Profile"
                                 className="h-full w-full object-cover"
                               />
                             </div>
@@ -1219,13 +972,13 @@ export default function HRMEmployees() {
                           )}
                           <label className="absolute -bottom-2 -right-2 h-10 w-10 bg-white rounded-xl border-2 border-blue-500 flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors shadow-md">
                             <Upload className="h-4 w-4 text-blue-600" />
-                            <input 
-                              type="file" 
-                              accept="image/*" 
+                            <input
+                              type="file"
+                              accept="image/*"
                               className="hidden"
                               onChange={(e) => {
                                 if (e.target.files?.[0]) {
-                                  setNewEmployee({...newEmployee, photo: e.target.files[0]});
+                                  setNewEmployee({ ...newEmployee, photo: e.target.files[0] });
                                 }
                               }}
                             />
@@ -1251,25 +1004,25 @@ export default function HRMEmployees() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Full Name *</Label>
-                            <Input 
-                              placeholder="e.g. Robert Fox" 
+                            <Input
+                              placeholder="e.g. Robert Fox"
                               value={newEmployee.name}
-                              onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Designation *</Label>
-                            <Input 
-                              placeholder="e.g. Lead Designer" 
+                            <Input
+                              placeholder="e.g. Lead Designer"
                               value={newEmployee.designation}
-                              onChange={(e) => setNewEmployee({...newEmployee, designation: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, designation: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Department *</Label>
-                            <Select onValueChange={(v) => setNewEmployee({...newEmployee, department: v})} value={newEmployee.department}>
+                            <Select onValueChange={(v) => setNewEmployee({ ...newEmployee, department: v })} value={newEmployee.department}>
                               <SelectTrigger className="rounded-xl border-slate-200 h-11 bg-slate-50/50">
                                 <SelectValue placeholder="Select Department" />
                               </SelectTrigger>
@@ -1285,7 +1038,7 @@ export default function HRMEmployees() {
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Blood Group</Label>
-                            <Select onValueChange={(v) => setNewEmployee({...newEmployee, bloodGroup: v})} value={newEmployee.bloodGroup}>
+                            <Select onValueChange={(v) => setNewEmployee({ ...newEmployee, bloodGroup: v })} value={newEmployee.bloodGroup}>
                               <SelectTrigger className="rounded-xl border-slate-200 h-11 bg-slate-50/50">
                                 <SelectValue placeholder="Select Blood Group" />
                               </SelectTrigger>
@@ -1313,41 +1066,41 @@ export default function HRMEmployees() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Official Email *</Label>
-                            <Input 
-                              placeholder="robert@company.com" 
+                            <Input
+                              placeholder="robert@company.com"
                               type="email"
                               value={newEmployee.email}
-                              onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Primary Phone</Label>
-                            <Input 
-                              placeholder="+1 (555) 000-0000" 
+                            <Input
+                              placeholder="+1 (555) 000-0000"
                               type="tel"
                               value={newEmployee.phone}
-                              onChange={(e) => setNewEmployee({...newEmployee, phone: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Alternate Phone</Label>
-                            <Input 
-                              placeholder="+1 (555) 999-9999" 
+                            <Input
+                              placeholder="+1 (555) 999-9999"
                               type="tel"
                               value={newEmployee.alternatePhone}
-                              onChange={(e) => setNewEmployee({...newEmployee, alternatePhone: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, alternatePhone: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Work Location</Label>
-                            <Input 
-                              placeholder="e.g. Remote / New York" 
+                            <Input
+                              placeholder="e.g. Remote / New York"
                               value={newEmployee.location}
-                              onChange={(e) => setNewEmployee({...newEmployee, location: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, location: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                         </div>
@@ -1362,38 +1115,38 @@ export default function HRMEmployees() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Bank Name</Label>
-                            <Input 
-                              placeholder="e.g. Chase Bank" 
+                            <Input
+                              placeholder="e.g. Chase Bank"
                               value={newEmployee.bankName}
-                              onChange={(e) => setNewEmployee({...newEmployee, bankName: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, bankName: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Branch Name</Label>
-                            <Input 
-                              placeholder="e.g. Main Street Branch" 
+                            <Input
+                              placeholder="e.g. Main Street Branch"
                               value={newEmployee.bankBranch}
-                              onChange={(e) => setNewEmployee({...newEmployee, bankBranch: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, bankBranch: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Account Number</Label>
-                            <Input 
-                              placeholder="XXXX XXXX XXXX" 
+                            <Input
+                              placeholder="XXXX XXXX XXXX"
                               value={newEmployee.accountNumber}
-                              onChange={(e) => setNewEmployee({...newEmployee, accountNumber: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, accountNumber: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">IFSC / Routing Code</Label>
-                            <Input 
-                              placeholder="e.g. HDFC0001234" 
+                            <Input
+                              placeholder="e.g. HDFC0001234"
                               value={newEmployee.ifscCode}
-                              onChange={(e) => setNewEmployee({...newEmployee, ifscCode: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, ifscCode: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                         </div>
@@ -1408,31 +1161,31 @@ export default function HRMEmployees() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">PAN Number</Label>
-                            <Input 
-                              placeholder="e.g. ABCDE1234F" 
+                            <Input
+                              placeholder="e.g. ABCDE1234F"
                               value={newEmployee.panNumber}
-                              onChange={(e) => setNewEmployee({...newEmployee, panNumber: e.target.value.toUpperCase()})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, panNumber: e.target.value.toUpperCase() })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                               maxLength={10}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Aadhaar Number</Label>
-                            <Input 
-                              placeholder="XXXX XXXX XXXX" 
+                            <Input
+                              placeholder="XXXX XXXX XXXX"
                               value={newEmployee.aadhaarNumber}
-                              onChange={(e) => setNewEmployee({...newEmployee, aadhaarNumber: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, aadhaarNumber: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                               maxLength={12}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Joining Date *</Label>
-                            <Input 
-                              type="date" 
+                            <Input
+                              type="date"
                               value={newEmployee.joining}
-                              onChange={(e) => setNewEmployee({...newEmployee, joining: e.target.value})}
-                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50" 
+                              onChange={(e) => setNewEmployee({ ...newEmployee, joining: e.target.value })}
+                              className="rounded-xl border-slate-200 h-11 bg-slate-50/50"
                             />
                           </div>
                         </div>
@@ -1459,13 +1212,13 @@ export default function HRMEmployees() {
                                   <span className="text-xs font-medium text-slate-500">Upload PDF</span>
                                 </>
                               )}
-                              <input 
-                                type="file" 
-                                accept=".pdf,.jpg,.jpeg,.png" 
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
                                 className="hidden"
                                 onChange={(e) => {
                                   if (e.target.files?.[0]) {
-                                    setNewEmployee({...newEmployee, aadhaarDoc: e.target.files[0]});
+                                    setNewEmployee({ ...newEmployee, aadhaarDoc: e.target.files[0] });
                                   }
                                 }}
                               />
@@ -1485,13 +1238,13 @@ export default function HRMEmployees() {
                                   <span className="text-xs font-medium text-slate-500">Upload PDF</span>
                                 </>
                               )}
-                              <input 
-                                type="file" 
-                                accept=".pdf,.jpg,.jpeg,.png" 
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
                                 className="hidden"
                                 onChange={(e) => {
                                   if (e.target.files?.[0]) {
-                                    setNewEmployee({...newEmployee, panDoc: e.target.files[0]});
+                                    setNewEmployee({ ...newEmployee, panDoc: e.target.files[0] });
                                   }
                                 }}
                               />
@@ -1511,13 +1264,13 @@ export default function HRMEmployees() {
                                   <span className="text-xs font-medium text-slate-500">Upload PDF</span>
                                 </>
                               )}
-                              <input 
-                                type="file" 
-                                accept=".pdf,.doc,.docx" 
+                              <input
+                                type="file"
+                                accept=".pdf,.doc,.docx"
                                 className="hidden"
                                 onChange={(e) => {
                                   if (e.target.files?.[0]) {
-                                    setNewEmployee({...newEmployee, resume: e.target.files[0]});
+                                    setNewEmployee({ ...newEmployee, resume: e.target.files[0] });
                                   }
                                 }}
                               />
@@ -1528,7 +1281,7 @@ export default function HRMEmployees() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="px-8 pb-8 pt-4 border-t border-slate-100 flex gap-3 bg-slate-50">
                     <Button variant="ghost" className="flex-1 rounded-xl h-12 font-bold text-slate-500 hover:bg-slate-100" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
                     <Button className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl h-12 font-bold shadow-lg shadow-blue-200" onClick={() => void handleAddEmployee()}>
@@ -1544,9 +1297,9 @@ export default function HRMEmployees() {
 
         <div className="grid gap-5 md:grid-cols-4">
           <StatCard title="Total Staff" value={employees.length.toString()} icon={<Users />} color="blue" sub="Across all departments" />
-          <StatCard title="Active" value={employees.filter(e => e.status === 'active').length.toString()} icon={<UserCheck />} color="emerald" sub="Fully productive" trend="up" />
+          <StatCard title="Active" value={employees.filter(e => e.status === 'active').length.toString()} icon={<UserCheck />} color="emerald" sub="Fully productive" />
           <StatCard title="On Probation" value={employees.filter(e => e.status === 'probation').length.toString()} icon={<Clock />} color="amber" sub="Performance review pending" />
-          <StatCard title="Attrition" value="2%" icon={<UserMinus />} color="rose" sub="Annualized rate" trend="down" />
+          <StatCard title="Exiting" value={employees.filter(e => e.status === 'exit').length.toString()} icon={<UserMinus />} color="rose" sub="Current exit processes" />
         </div>
 
         <div className="grid gap-6">
@@ -1554,13 +1307,13 @@ export default function HRMEmployees() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
               <TabsList className="bg-transparent h-auto p-0 gap-1">
                 {['all', 'active', 'probation', 'onboarding', 'exit'].map((tab) => (
-                  <TabsTrigger 
+                  <TabsTrigger
                     key={tab}
-                    value={tab} 
+                    value={tab}
                     className={cn(
                       "px-6 py-2.5 rounded-xl transition-all capitalize font-bold",
-                      activeTab === tab 
-                        ? "bg-white text-blue-600 shadow-sm border border-blue-100/50" 
+                      activeTab === tab
+                        ? "bg-white text-blue-600 shadow-sm border border-blue-100/50"
                         : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50"
                     )}
                   >
@@ -1579,7 +1332,7 @@ export default function HRMEmployees() {
                     className="pl-10 w-full md:w-[280px] bg-white border-slate-200 rounded-xl focus-visible:ring-blue-500/20"
                   />
                 </div>
-                
+
                 <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                   <SelectTrigger className="w-[180px] bg-white border-slate-200 rounded-xl font-medium">
                     <Filter className="h-4 w-4 mr-2 text-slate-400" />
@@ -1622,7 +1375,7 @@ export default function HRMEmployees() {
                             </div>
                           </CardContent>
                         </Card>
-                        
+
                         <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/50">
                           <CardContent className="p-4 sm:p-6">
                             <div className="flex items-center justify-between">
@@ -1646,7 +1399,7 @@ export default function HRMEmployees() {
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1 truncate">Avg Progress</p>
                                 <h3 className="text-2xl sm:text-3xl font-black text-blue-700">
-                                  {Math.round(filteredEmployees.filter(emp => emp.status === 'exit').reduce((acc, emp) => acc + (emp.exitWorkflow?.progress || 0), 0) / filteredEmployees.filter(emp => emp.status === 'exit').length) || 0}%
+                                  {Math.round(filteredEmployees.filter(emp => emp.status === 'exit').reduce((acc: number, emp: any) => acc + (emp.exitWorkflow?.progress || 0), 0) / filteredEmployees.filter(emp => emp.status === 'exit').length) || 0}%
                                 </h3>
                                 <p className="text-xs text-blue-500 mt-1">Overall</p>
                               </div>
@@ -1662,7 +1415,7 @@ export default function HRMEmployees() {
                             <div className="flex items-center justify-between">
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 truncate">This Month</p>
-                                <h3 className="text-2xl sm:text-3xl font-black text-emerald-700">12</h3>
+                                <h3 className="text-2xl sm:text-3xl font-black text-emerald-700">{employees.filter(emp => emp.status === 'exit' && emp.exitWorkflow?.progress === 100).length}</h3>
                                 <p className="text-xs text-emerald-500 mt-1">Completed</p>
                               </div>
                               <div className="p-2 sm:p-3 bg-emerald-200 rounded-xl flex-shrink-0">
@@ -1695,7 +1448,7 @@ export default function HRMEmployees() {
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1 truncate">Assets</p>
                                 <h3 className="text-2xl sm:text-3xl font-black text-slate-700">
-                                  {filteredEmployees.filter(emp => emp.status === 'exit').reduce((acc, emp) => acc + (emp.exitWorkflow?.assets?.filter(asset => asset.status === 'pending_return').length || 0), 0)}
+                                  {filteredEmployees.filter(emp => emp.status === 'exit').reduce((acc: number, emp: any) => acc + (emp.exitWorkflow?.assets?.filter((asset: any) => asset.status === 'pending_return').length || 0), 0)}
                                 </h3>
                                 <p className="text-xs text-slate-500 mt-1">Pending</p>
                               </div>
@@ -1712,8 +1465,8 @@ export default function HRMEmployees() {
                         <div className="flex-1">
                           <h4 className="text-sm font-bold text-slate-700 mb-2">Quick Actions</h4>
                           <div className="flex flex-wrap gap-2">
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               onClick={() => handleButtonAction('initiate_exit')}
                               disabled={loadingStates['initiate_exit']}
                               className="rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-xs font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
@@ -1726,9 +1479,9 @@ export default function HRMEmployees() {
                               <span className="hidden sm:inline">Initiate Exit</span>
                               <span className="sm:hidden">Initiate</span>
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => handleButtonAction('schedule_interview')}
                               disabled={loadingStates['schedule_interview']}
                               className="rounded-xl text-xs font-bold border-purple-300 text-purple-600 hover:bg-purple-50 hover:border-purple-400 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
@@ -1741,9 +1494,9 @@ export default function HRMEmployees() {
                               <span className="hidden sm:inline">Schedule Interview</span>
                               <span className="sm:hidden">Schedule</span>
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => handleButtonAction('export_report')}
                               disabled={loadingStates['export_report']}
                               className="rounded-xl text-xs font-bold border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
@@ -1770,9 +1523,9 @@ export default function HRMEmployees() {
                               <SelectItem value="completed">Completed</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-8 px-3 text-xs font-bold rounded-lg border-slate-300 hover:bg-slate-100"
                           >
                             <Filter className="h-3 w-3" />
@@ -1804,7 +1557,7 @@ export default function HRMEmployees() {
                                       <p className="text-xs text-slate-500 mt-1">ID: {employee.id} • Exit ID: {employee.exitWorkflow?.id}</p>
                                     </div>
                                   </div>
-                                  
+
                                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                                     <div className="text-center sm:text-left">
                                       <div className="text-xl sm:text-2xl font-black text-rose-600">{employee.exitWorkflow?.progress}%</div>
@@ -1812,18 +1565,18 @@ export default function HRMEmployees() {
                                     </div>
                                     <Badge className={cn(
                                       "px-2 sm:px-3 py-1 sm:py-1.5 font-bold rounded-full text-xs whitespace-nowrap",
-                                      employee.exitWorkflow?.priority === 'high' 
-                                        ? "bg-red-100 text-red-700 border-red-200" 
+                                      employee.exitWorkflow?.priority === 'high'
+                                        ? "bg-red-100 text-red-700 border-red-200"
                                         : employee.exitWorkflow?.priority === 'medium'
-                                        ? "bg-amber-100 text-amber-700 border-amber-200"
-                                        : "bg-green-100 text-green-700 border-green-200"
+                                          ? "bg-amber-100 text-amber-700 border-amber-200"
+                                          : "bg-green-100 text-green-700 border-green-200"
                                     )}>
                                       <span className="hidden sm:inline">{employee.exitWorkflow?.priority?.toUpperCase()} Priority</span>
                                       <span className="sm:hidden">{employee.exitWorkflow?.priority?.charAt(0).toUpperCase()}</span>
                                     </Badge>
                                   </div>
                                 </div>
-                                
+
                                 {/* Progress Bar */}
                                 <div className="mt-4">
                                   <div className="flex justify-between text-xs font-medium text-slate-600 mb-2">
@@ -1831,8 +1584,8 @@ export default function HRMEmployees() {
                                     <span>{employee.exitWorkflow?.progress}% Complete</span>
                                   </div>
                                   <div className="w-full bg-slate-200 rounded-full h-2.5">
-                                    <div 
-                                      className="bg-gradient-to-r from-rose-500 to-purple-500 h-2.5 rounded-full transition-all duration-500" 
+                                    <div
+                                      className="bg-gradient-to-r from-rose-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
                                       style={{ width: `${employee.exitWorkflow?.progress}%` }}
                                     ></div>
                                   </div>
@@ -1881,11 +1634,11 @@ export default function HRMEmployees() {
                                         <TabsTrigger value="assets" className="rounded-lg text-xs font-bold">Assets</TabsTrigger>
                                         <TabsTrigger value="knowledge" className="rounded-lg text-xs font-bold">Knowledge</TabsTrigger>
                                       </TabsList>
-                                      
+
                                       <div className="flex flex-wrap gap-2">
-                                        <Button 
-                                          size="sm" 
-                                          variant="outline" 
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
                                           onClick={() => handleButtonAction('view_details', employee.id)}
                                           disabled={loadingStates[`view_details_${employee.id}`]}
                                           className="rounded-xl text-xs font-bold h-8 border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
@@ -1898,8 +1651,8 @@ export default function HRMEmployees() {
                                           <span className="hidden sm:inline">View Full Details</span>
                                           <span className="sm:hidden">Details</span>
                                         </Button>
-                                        <Button 
-                                          size="sm" 
+                                        <Button
+                                          size="sm"
                                           onClick={() => handleButtonAction('export_report', employee.id)}
                                           disabled={loadingStates[`export_report_${employee.id}`]}
                                           className="rounded-xl text-xs font-bold h-8 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
@@ -1922,15 +1675,15 @@ export default function HRMEmployees() {
                                           Clearance Progress ({employee.exitWorkflow.steps.filter((s: any) => s.status === 'completed').length}/{employee.exitWorkflow.steps.length})
                                         </h4>
                                         {employee.exitWorkflow.steps.map((step: any, idx: number) => (
-                                          <div 
-                                            key={idx} 
+                                          <div
+                                            key={idx}
                                             className={cn(
                                               "flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border transition-all hover:shadow-md",
-                                              step.status === 'pending' 
-                                                ? "bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200" 
+                                              step.status === 'pending'
+                                                ? "bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200"
                                                 : step.status === 'completed'
-                                                ? "bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200"
-                                                : "bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200"
+                                                  ? "bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200"
+                                                  : "bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200"
                                             )}
                                           >
                                             <div className="flex items-start gap-3 mb-3 sm:mb-0">
@@ -1955,7 +1708,7 @@ export default function HRMEmployees() {
                                                 )}
                                               </div>
                                             </div>
-                                            
+
                                             <div className="flex items-center justify-between sm:justify-end gap-3">
                                               {step.dueDate && step.status === 'pending' && (
                                                 <div className="text-right">
@@ -1976,14 +1729,14 @@ export default function HRMEmployees() {
                                                     Complete
                                                   </Button>
                                                 )}
-                                                <Badge 
+                                                <Badge
                                                   className={cn(
                                                     "rounded-lg text-[10px] font-black uppercase flex-shrink-0",
-                                                    step.status === 'pending' 
-                                                      ? "bg-amber-200 text-amber-700" 
+                                                    step.status === 'pending'
+                                                      ? "bg-amber-200 text-amber-700"
                                                       : step.status === 'completed'
-                                                      ? "bg-emerald-200 text-emerald-700"
-                                                      : "bg-slate-200 text-slate-600"
+                                                        ? "bg-emerald-200 text-emerald-700"
+                                                        : "bg-slate-200 text-slate-600"
                                                   )}
                                                 >
                                                   {step.status === 'completed' ? 'Cleared' : step.status === 'pending' ? 'In Progress' : 'Waiting'}
@@ -2004,8 +1757,8 @@ export default function HRMEmployees() {
                                         {employee.exitWorkflow.assets?.map((asset: any, idx: number) => (
                                           <div key={idx} className={cn(
                                             "flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border",
-                                            asset.status === 'returned' 
-                                              ? "bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200" 
+                                            asset.status === 'returned'
+                                              ? "bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200"
                                               : "bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200"
                                           )}>
                                             <div className="mb-3 sm:mb-0">
@@ -2030,8 +1783,8 @@ export default function HRMEmployees() {
                                               )}
                                               <Badge className={cn(
                                                 "rounded-lg text-[10px] font-black uppercase",
-                                                asset.status === 'returned' 
-                                                  ? "bg-emerald-200 text-emerald-700" 
+                                                asset.status === 'returned'
+                                                  ? "bg-emerald-200 text-emerald-700"
                                                   : "bg-amber-200 text-amber-700"
                                               )}>
                                                 {asset.status === 'returned' ? 'Returned' : 'Pending Return'}
@@ -2048,20 +1801,20 @@ export default function HRMEmployees() {
                                           <FileText className="h-4 w-4 text-rose-600" />
                                           Knowledge Transfer Progress
                                         </h4>
-                                        
+
                                         <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
                                           <div className="flex items-center justify-between mb-3">
                                             <h5 className="text-sm font-bold text-blue-800">Transfer Sessions</h5>
                                             <Badge className={cn(
                                               "text-[10px] font-bold",
-                                              employee.exitWorkflow.knowledgeTransfer?.status === 'completed' 
-                                                ? "bg-emerald-200 text-emerald-700" 
+                                              employee.exitWorkflow.knowledgeTransfer?.status === 'completed'
+                                                ? "bg-emerald-200 text-emerald-700"
                                                 : "bg-amber-200 text-amber-700"
                                             )}>
                                               {employee.exitWorkflow.knowledgeTransfer?.status?.toUpperCase()}
                                             </Badge>
                                           </div>
-                                          
+
                                           <div className="space-y-2">
                                             {employee.exitWorkflow.knowledgeTransfer?.sessions?.map((session: any, idx: number) => (
                                               <div key={idx} className="flex justify-between items-center text-xs">
@@ -2073,7 +1826,7 @@ export default function HRMEmployees() {
                                             ))}
                                           </div>
                                         </div>
-                                        
+
                                         <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl border border-purple-200">
                                           <h5 className="text-sm font-bold text-purple-800 mb-2">Documentation Handover</h5>
                                           <div className="flex flex-wrap gap-2">
@@ -2090,7 +1843,7 @@ export default function HRMEmployees() {
 
                                   {/* Enhanced Action Buttons */}
                                   <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200">
-                                    <Button 
+                                    <Button
                                       onClick={() => handleButtonAction('view_profile', employee.id)}
                                       disabled={loadingStates[`view_profile_${employee.id}`]}
                                       className="flex-1 rounded-xl h-11 font-bold bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none"
@@ -2103,8 +1856,8 @@ export default function HRMEmployees() {
                                       <span className="hidden sm:inline">View Complete Profile</span>
                                       <span className="sm:hidden">Profile</span>
                                     </Button>
-                                    <Button 
-                                      variant="outline" 
+                                    <Button
+                                      variant="outline"
                                       onClick={() => handleButtonAction('schedule_interview', employee.id)}
                                       disabled={loadingStates[`schedule_interview_${employee.id}`]}
                                       className="flex-1 rounded-xl h-11 font-bold border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none"
@@ -2117,8 +1870,8 @@ export default function HRMEmployees() {
                                       <span className="hidden sm:inline">Schedule Interview</span>
                                       <span className="sm:hidden">Interview</span>
                                     </Button>
-                                    <Button 
-                                      variant="outline" 
+                                    <Button
+                                      variant="outline"
                                       onClick={() => handleButtonAction('export_clearance', employee.id)}
                                       disabled={loadingStates[`export_clearance_${employee.id}`]}
                                       className="flex-1 rounded-xl h-11 font-bold border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none"
@@ -2138,8 +1891,8 @@ export default function HRMEmployees() {
                                   <AlertCircle className="h-8 w-8 mx-auto mb-2 text-orange-300" />
                                   <p className="text-sm font-medium mb-3">No exit workflow data available</p>
                                   <p className="text-xs text-slate-400 mb-4 max-w-md">Initialize a comprehensive exit workflow to track clearances, asset returns, and knowledge transfer.</p>
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     onClick={() => handleButtonAction('initialize_workflow', employee.id)}
                                     disabled={loadingStates[`initialize_workflow_${employee.id}`]}
                                     className="rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
@@ -2174,7 +1927,7 @@ export default function HRMEmployees() {
                           Great news! There are currently no employees in the exit workflow. Your team is stable and all previous clearances have been completed successfully.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 mt-8">
-                          <Button 
+                          <Button
                             onClick={() => handleButtonAction('initiate_exit')}
                             disabled={loadingStates['initiate_exit']}
                             className="rounded-xl px-6 py-3 font-bold bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
@@ -2187,8 +1940,8 @@ export default function HRMEmployees() {
                             <span className="hidden sm:inline">Initiate Exit Process</span>
                             <span className="sm:hidden">Start Exit</span>
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             onClick={() => handleButtonAction('view_past_exits')}
                             disabled={loadingStates['view_past_exits']}
                             className="rounded-xl px-6 py-3 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
@@ -2223,10 +1976,10 @@ export default function HRMEmployees() {
               ) : filteredEmployees.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                   {filteredEmployees.map((employee) => (
-                    <EmployeeCard 
-                      key={employee.id} 
-                      employee={employee} 
-                      statusConfig={statusConfig} 
+                    <EmployeeCard
+                      key={employee.id}
+                      employee={employee}
+                      statusConfig={statusConfig}
                       onUpdateStatus={handleUpdateStatus}
                       onEdit={handleEditEmployee}
                       onPhotoUpload={handlePhotoUpload}
@@ -2244,8 +1997,8 @@ export default function HRMEmployees() {
                     <p className="text-sm text-slate-500 max-w-xs mt-2 font-medium">
                       Zero results for your current filter combination. Try broader criteria.
                     </p>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="mt-8 rounded-xl px-8 font-bold border-slate-200"
                       onClick={() => {
                         setSearchQuery('');
@@ -2279,7 +2032,7 @@ export default function HRMEmployees() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="exit_employee" className="text-sm font-medium text-slate-700">Employee *</Label>
-                <Select onValueChange={(value) => setExitFormData({...exitFormData, employeeId: value})}>
+                <Select onValueChange={(value) => setExitFormData({ ...exitFormData, employeeId: value })}>
                   <SelectTrigger className="rounded-lg mt-1">
                     <SelectValue placeholder="Select employee" />
                   </SelectTrigger>
@@ -2292,7 +2045,7 @@ export default function HRMEmployees() {
               </div>
               <div>
                 <Label htmlFor="exit_reason" className="text-sm font-medium text-slate-700">Exit Reason *</Label>
-                <Select onValueChange={(value) => setExitFormData({...exitFormData, reason: value})}>
+                <Select onValueChange={(value) => setExitFormData({ ...exitFormData, reason: value })}>
                   <SelectTrigger className="rounded-lg mt-1">
                     <SelectValue placeholder="Select reason" />
                   </SelectTrigger>
@@ -2313,7 +2066,7 @@ export default function HRMEmployees() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="exit_type" className="text-sm font-medium text-slate-700">Exit Type *</Label>
-                <Select onValueChange={(value) => setExitFormData({...exitFormData, type: value})}>
+                <Select onValueChange={(value) => setExitFormData({ ...exitFormData, type: value })}>
                   <SelectTrigger className="rounded-lg mt-1">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -2325,7 +2078,7 @@ export default function HRMEmployees() {
               </div>
               <div>
                 <Label htmlFor="priority" className="text-sm font-medium text-slate-700">Priority *</Label>
-                <Select onValueChange={(value) => setExitFormData({...exitFormData, priority: value})}>
+                <Select onValueChange={(value) => setExitFormData({ ...exitFormData, priority: value })}>
                   <SelectTrigger className="rounded-lg mt-1">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
@@ -2345,12 +2098,12 @@ export default function HRMEmployees() {
                 className="rounded-lg mt-1"
                 min={new Date().toISOString().split('T')[0]}
                 value={exitFormData.lastWorkingDay}
-                onChange={(e) => setExitFormData({...exitFormData, lastWorkingDay: e.target.value})}
+                onChange={(e) => setExitFormData({ ...exitFormData, lastWorkingDay: e.target.value })}
               />
             </div>
             <div>
               <Label htmlFor="assigned_hr" className="text-sm font-medium text-slate-700">Assigned HR Manager</Label>
-              <Select value={exitFormData.assignedHR} onValueChange={(value) => setExitFormData({...exitFormData, assignedHR: value})}>
+              <Select value={exitFormData.assignedHR} onValueChange={(value) => setExitFormData({ ...exitFormData, assignedHR: value })}>
                 <SelectTrigger className="rounded-lg mt-1">
                   <SelectValue placeholder="Select HR manager" />
                 </SelectTrigger>
@@ -2362,14 +2115,14 @@ export default function HRMEmployees() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsExitDialogOpen(false)}
               className="rounded-lg"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={createExitWorkflow}
               disabled={loadingStates['create_exit']}
               className="rounded-lg bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-700 hover:to-purple-700"
@@ -2405,7 +2158,7 @@ export default function HRMEmployees() {
                   className="rounded-lg mt-1"
                   min={new Date().toISOString().split('T')[0]}
                   value={interviewFormData.date}
-                  onChange={(e) => setInterviewFormData({...interviewFormData, date: e.target.value})}
+                  onChange={(e) => setInterviewFormData({ ...interviewFormData, date: e.target.value })}
                 />
               </div>
               <div>
@@ -2415,13 +2168,13 @@ export default function HRMEmployees() {
                   type="time"
                   className="rounded-lg mt-1"
                   value={interviewFormData.time}
-                  onChange={(e) => setInterviewFormData({...interviewFormData, time: e.target.value})}
+                  onChange={(e) => setInterviewFormData({ ...interviewFormData, time: e.target.value })}
                 />
               </div>
             </div>
             <div>
               <Label htmlFor="interviewer" className="text-sm font-medium text-slate-700">Interviewer *</Label>
-              <Select onValueChange={(value) => setInterviewFormData({...interviewFormData, interviewer: value})}>
+              <Select onValueChange={(value) => setInterviewFormData({ ...interviewFormData, interviewer: value })}>
                 <SelectTrigger className="rounded-lg mt-1">
                   <SelectValue placeholder="Select interviewer" />
                 </SelectTrigger>
@@ -2435,7 +2188,7 @@ export default function HRMEmployees() {
             </div>
             <div>
               <Label htmlFor="meeting_type" className="text-sm font-medium text-slate-700">Meeting Type *</Label>
-              <Select onValueChange={(value) => setInterviewFormData({...interviewFormData, meetingType: value})}>
+              <Select onValueChange={(value) => setInterviewFormData({ ...interviewFormData, meetingType: value })}>
                 <SelectTrigger className="rounded-lg mt-1">
                   <SelectValue placeholder="Select meeting type" />
                 </SelectTrigger>
@@ -2453,19 +2206,19 @@ export default function HRMEmployees() {
                 placeholder="Any special instructions or notes..."
                 className="rounded-lg mt-1"
                 value={interviewFormData.notes}
-                onChange={(e) => setInterviewFormData({...interviewFormData, notes: e.target.value})}
+                onChange={(e) => setInterviewFormData({ ...interviewFormData, notes: e.target.value })}
               />
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsInterviewDialogOpen(false)}
               className="rounded-lg"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={scheduleInterview}
               disabled={loadingStates['schedule_interview']}
               className="rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
@@ -2491,7 +2244,7 @@ export default function HRMEmployees() {
               Comprehensive view of the exit workflow progress and requirements
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedEmployee?.exitWorkflow ? (
             <div className="space-y-6 py-4">
               {/* Quick Stats */}
@@ -2549,7 +2302,7 @@ export default function HRMEmployees() {
               <p>No exit workflow details available</p>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>Close</Button>
             <Button onClick={() => generatePDFReport(selectedEmployee, 'report')} className="bg-blue-600 hover:bg-blue-700">
@@ -2572,7 +2325,7 @@ export default function HRMEmployees() {
               Full employee information and exit workflow status
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedEmployee && (
             <div className="space-y-6 py-4">
               {/* Employee Header */}
@@ -2647,7 +2400,7 @@ export default function HRMEmployees() {
               )}
             </div>
           )}
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsProfileModalOpen(false)}>Close</Button>
             <Button onClick={() => generatePDFReport(selectedEmployee, 'report')} className="bg-purple-600 hover:bg-purple-700">
@@ -2670,24 +2423,24 @@ export default function HRMEmployees() {
               Past employee exits and their completion statistics
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             {/* Summary Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="p-3 bg-emerald-50 rounded-lg text-center">
-                <div className="text-lg font-bold text-emerald-700">47</div>
-                <div className="text-xs text-emerald-600">Total Exits (2024)</div>
+                <div className="text-lg font-bold text-emerald-700">{employees.filter(e => e.status === 'terminated' || (e.status === 'exit' && e.exitWorkflow?.progress === 100)).length}</div>
+                <div className="text-xs text-emerald-600">Total Exits</div>
               </div>
               <div className="p-3 bg-blue-50 rounded-lg text-center">
-                <div className="text-lg font-bold text-blue-700">8.5</div>
+                <div className="text-lg font-bold text-blue-700">-</div>
                 <div className="text-xs text-blue-600">Avg Days</div>
               </div>
               <div className="p-3 bg-purple-50 rounded-lg text-center">
-                <div className="text-lg font-bold text-purple-700">98%</div>
+                <div className="text-lg font-bold text-purple-700">-</div>
                 <div className="text-xs text-purple-600">Completion Rate</div>
               </div>
               <div className="p-3 bg-amber-50 rounded-lg text-center">
-                <div className="text-lg font-bold text-amber-700">4.2</div>
+                <div className="text-lg font-bold text-amber-700">-</div>
                 <div className="text-xs text-amber-600">Avg Rating</div>
               </div>
             </div>
@@ -2696,27 +2449,27 @@ export default function HRMEmployees() {
             <div>
               <h3 className="text-lg font-bold text-slate-800 mb-4">Recent Completed Exits</h3>
               <div className="space-y-3">
-                {[
-                  { name: 'Robert Wilson', dept: 'Engineering', date: '2024-01-15', reason: 'Career Growth', duration: '7 days' },
-                  { name: 'Maria Garcia', dept: 'Marketing', date: '2024-01-10', reason: 'Relocation', duration: '9 days' },
-                  { name: 'James Anderson', dept: 'Sales', date: '2024-01-05', reason: 'Better Opportunity', duration: '6 days' },
-                  { name: 'Linda Davis', dept: 'Finance', date: '2023-12-28', reason: 'Retirement', duration: '12 days' },
-                ].map((exit, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-3 border border-slate-200 rounded-lg bg-slate-50">
-                    <div>
-                      <p className="font-bold text-slate-800">{exit.name}</p>
-                      <p className="text-sm text-slate-600">{exit.dept} • {exit.reason}</p>
+                {employees.filter(e => e.status === 'terminated' || (e.status === 'exit' && e.exitWorkflow?.progress === 100)).length > 0 ? (
+                  employees.filter(e => e.status === 'terminated' || (e.status === 'exit' && e.exitWorkflow?.progress === 100)).map((exit, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-3 border border-slate-200 rounded-lg bg-slate-50">
+                      <div>
+                        <p className="font-bold text-slate-800">{exit.name}</p>
+                        <p className="text-sm text-slate-600">{exit.department} • {exit.exitWorkflow?.reason || 'N/A'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-slate-700">{exit.exitWorkflow?.expectedLastDay ? new Date(exit.exitWorkflow.expectedLastDay).toLocaleDateString() : 'N/A'}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-slate-700">{exit.date}</p>
-                      <p className="text-xs text-slate-500">{exit.duration}</p>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <p>No historical exit records found.</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPastExitsModalOpen(false)}>Close</Button>
             <Button onClick={() => generateExcelReport()} className="bg-slate-600 hover:bg-slate-700">
@@ -2762,7 +2515,7 @@ export default function HRMEmployees() {
                       id="edit-name"
                       placeholder="Enter full name"
                       value={editingEmployee.name}
-                      onChange={(e) => setEditingEmployee({...editingEmployee, name: e.target.value})}
+                      onChange={(e) => setEditingEmployee({ ...editingEmployee, name: e.target.value })}
                       className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
                     />
                   </div>
@@ -2774,7 +2527,7 @@ export default function HRMEmployees() {
                       id="edit-designation"
                       placeholder="Enter job title"
                       value={editingEmployee.designation}
-                      onChange={(e) => setEditingEmployee({...editingEmployee, designation: e.target.value})}
+                      onChange={(e) => setEditingEmployee({ ...editingEmployee, designation: e.target.value })}
                       className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
                     />
                   </div>
@@ -2792,9 +2545,9 @@ export default function HRMEmployees() {
                     <Label htmlFor="edit-department" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
                       Department <span className="text-red-500">*</span>
                     </Label>
-                    <Select 
-                      value={editingEmployee.department} 
-                      onValueChange={(value) => setEditingEmployee({...editingEmployee, department: value})}
+                    <Select
+                      value={editingEmployee.department}
+                      onValueChange={(value) => setEditingEmployee({ ...editingEmployee, department: value })}
                     >
                       <SelectTrigger className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50">
                         <SelectValue placeholder="Select department" />
@@ -2820,7 +2573,7 @@ export default function HRMEmployees() {
                       id="edit-location"
                       placeholder="Enter location"
                       value={editingEmployee.location}
-                      onChange={(e) => setEditingEmployee({...editingEmployee, location: e.target.value})}
+                      onChange={(e) => setEditingEmployee({ ...editingEmployee, location: e.target.value })}
                       className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
                     />
                   </div>
@@ -2832,7 +2585,7 @@ export default function HRMEmployees() {
                       id="edit-joining"
                       type="date"
                       value={editingEmployee.joining}
-                      onChange={(e) => setEditingEmployee({...editingEmployee, joining: e.target.value})}
+                      onChange={(e) => setEditingEmployee({ ...editingEmployee, joining: e.target.value })}
                       className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
                     />
                   </div>
@@ -2855,7 +2608,7 @@ export default function HRMEmployees() {
                       type="email"
                       placeholder="Enter email address"
                       value={editingEmployee.email}
-                      onChange={(e) => setEditingEmployee({...editingEmployee, email: e.target.value})}
+                      onChange={(e) => setEditingEmployee({ ...editingEmployee, email: e.target.value })}
                       className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
                     />
                   </div>
@@ -2867,7 +2620,7 @@ export default function HRMEmployees() {
                       id="edit-phone"
                       placeholder="Enter phone number"
                       value={editingEmployee.phone}
-                      onChange={(e) => setEditingEmployee({...editingEmployee, phone: e.target.value})}
+                      onChange={(e) => setEditingEmployee({ ...editingEmployee, phone: e.target.value })}
                       className="rounded-xl mt-2 h-11 border-slate-200 bg-slate-50/50 focus:bg-white"
                     />
                   </div>
@@ -2876,8 +2629,8 @@ export default function HRMEmployees() {
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsEditDialogOpen(false);
                 setEditingEmployee(null);
@@ -2886,7 +2639,7 @@ export default function HRMEmployees() {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleUpdateEmployee}
               className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
@@ -2900,16 +2653,16 @@ export default function HRMEmployees() {
   );
 }
 
-function EmployeeCard({ 
-  employee, 
-  statusConfig, 
-  onUpdateStatus, 
-  onEdit, 
-  onPhotoUpload, 
-  uploadingPhoto 
-}: { 
-  employee: any, 
-  statusConfig: any, 
+function EmployeeCard({
+  employee,
+  statusConfig,
+  onUpdateStatus,
+  onEdit,
+  onPhotoUpload,
+  uploadingPhoto
+}: {
+  employee: any,
+  statusConfig: any,
   onUpdateStatus: (id: string, status: string, workflow?: any) => void,
   onEdit: (employee: any) => void,
   onPhotoUpload: (employeeId: string, file: File) => void,
@@ -2927,10 +2680,10 @@ function EmployeeCard({
     const years = now.getFullYear() - start.getFullYear();
     const months = now.getMonth() - start.getMonth();
     const totalMonths = years * 12 + months;
-    
+
     if (totalMonths < 1) return "Less than a month";
     if (totalMonths < 12) return `${totalMonths} month${totalMonths > 1 ? 's' : ''}`;
-    
+
     const remainingMonths = totalMonths % 12;
     return `${Math.floor(totalMonths / 12)} year${Math.floor(totalMonths / 12) > 1 ? 's' : ''}${remainingMonths > 0 ? ` ${remainingMonths} month${remainingMonths > 1 ? 's' : ''}` : ''}`;
   };
@@ -2944,7 +2697,7 @@ function EmployeeCard({
       duration: 2000,
     });
   };
-  
+
   const handleInitiateExit = () => {
     // Validation
     if (!exitReason) {
@@ -2967,11 +2720,11 @@ function EmployeeCard({
         { name: 'Finance Settlement', status: 'waiting' }
       ]
     };
-    
+
     onUpdateStatus(employee.id, 'exit', workflow);
     setIsExitDialogOpen(false);
     setExitReason(''); // Clear the reason after successful submission
-    
+
     toast({
       title: "✅ Exit Process Initiated",
       description: `${exitReason} workflow started for ${employee.name}. All relevant departments will be notified.`,
@@ -2986,14 +2739,14 @@ function EmployeeCard({
         <div className="flex justify-between items-start mb-5">
           <div className="relative group">
             <Avatar className="h-16 w-16 ring-4 ring-white shadow-md border border-slate-100 group-hover:scale-105 transition-transform duration-300 cursor-pointer">
-              <AvatarImage 
-                src={employee.photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.name}`} 
+              <AvatarImage
+                src={employee.photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.name}`}
               />
               <AvatarFallback className="bg-blue-600 text-white text-xl font-bold">
                 {employee.avatar}
               </AvatarFallback>
             </Avatar>
-            
+
             {/* Photo Upload Overlay */}
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
               <div className="relative">
@@ -3022,13 +2775,13 @@ function EmployeeCard({
                 </Button>
               </div>
             </div>
-            
+
             <div className={cn(
               "absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-4 border-white shadow-sm",
               employee.status === 'active' ? "bg-emerald-500" : "bg-slate-400"
             )} />
           </div>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100">
@@ -3081,7 +2834,7 @@ function EmployeeCard({
       </CardContent>
 
       <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-        <Badge 
+        <Badge
           className={cn(
             "rounded-lg px-2 py-0.5 border text-[10px] font-bold tracking-tight shadow-sm",
             statusConfig[employee.status].class
@@ -3089,12 +2842,12 @@ function EmployeeCard({
         >
           {statusConfig[employee.status].label}
         </Badge>
-        
+
         <Dialog open={isOverviewDialogOpen} onOpenChange={setIsOverviewDialogOpen}>
           <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="h-8 rounded-lg bg-white border-slate-200 text-xs font-bold hover:border-blue-400 hover:text-blue-600 transition-all active:scale-95 shadow-sm"
             >
               <Eye className="h-3.5 w-3.5 mr-1" />
@@ -3132,7 +2885,7 @@ function EmployeeCard({
               <div className="grid grid-cols-2 gap-4 mb-10">
                 <ProfileInfoItem icon={<Building2 />} label="Department" value={employee.department} />
                 <ProfileInfoItem icon={<MapPin />} label="Work Location" value={employee.location} />
-                
+
                 <div className="flex items-start gap-4 p-4 rounded-2xl border border-slate-100/80 bg-slate-50/30 hover:bg-white hover:border-blue-100 transition-all group/info cursor-pointer"
                   onClick={() => copyToClipboard(employee.email, "Email")}>
                   <div className="p-2.5 rounded-xl mt-0.5 transition-colors group-hover/info:scale-110 bg-blue-50 text-blue-600">
@@ -3145,7 +2898,7 @@ function EmployeeCard({
                   </div>
                   <Copy className="h-4 w-4 text-slate-400 mt-6 opacity-0 group-hover/info:opacity-100 transition-opacity" />
                 </div>
-                
+
                 <div className="flex items-start gap-4 p-4 rounded-2xl border border-slate-100/80 bg-slate-50/30 hover:bg-white hover:border-emerald-100 transition-all group/info cursor-pointer"
                   onClick={() => copyToClipboard(employee.phone, "Phone number")}>
                   <div className="p-2.5 rounded-xl mt-0.5 transition-colors group-hover/info:scale-110 bg-emerald-50 text-emerald-600">
@@ -3158,7 +2911,7 @@ function EmployeeCard({
                   </div>
                   <Copy className="h-4 w-4 text-slate-400 mt-6 opacity-0 group-hover/info:opacity-100 transition-opacity" />
                 </div>
-                
+
                 <ProfileInfoItem icon={<Calendar />} label="Joining Date" value={new Date(employee.joining).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} />
                 <ProfileInfoItem icon={<Briefcase />} label="Employment Type" value="Full Time" />
               </div>
@@ -3168,27 +2921,27 @@ function EmployeeCard({
                 <div className="mb-8 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">Quick Actions</p>
                   <div className="grid grid-cols-3 gap-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="h-12 flex-col gap-1 hover:bg-white hover:border-blue-300"
                       onClick={() => window.open(`mailto:${employee.email}`)}
                     >
                       <Mail className="h-4 w-4 text-blue-600" />
                       <span className="text-[10px] font-semibold">Send Email</span>
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="h-12 flex-col gap-1 hover:bg-white hover:border-emerald-300"
                       onClick={() => window.open(`tel:${employee.phone}`)}
                     >
                       <Phone className="h-4 w-4 text-emerald-600" />
                       <span className="text-[10px] font-semibold">Call</span>
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="h-12 flex-col gap-1 hover:bg-white hover:border-purple-300"
                       onClick={() => toast({ title: "Documents", description: "Opening employee documents..." })}
                     >
@@ -3222,7 +2975,7 @@ function EmployeeCard({
               )}
 
               <div className="flex gap-3">
-                <Button 
+                <Button
                   className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-2xl py-7 h-auto font-bold shadow-lg shadow-blue-200 transition-all active:scale-[0.98] hover:shadow-xl"
                   onClick={() => {
                     setIsOverviewDialogOpen(false);
@@ -3232,7 +2985,7 @@ function EmployeeCard({
                   <Edit className="h-5 w-5 mr-3" />
                   Edit Profile
                 </Button>
-                
+
                 {employee.status !== 'exit' && (
                   <Dialog open={isExitDialogOpen} onOpenChange={setIsExitDialogOpen}>
                     <DialogTrigger asChild>
@@ -3241,61 +2994,61 @@ function EmployeeCard({
                         Exit Process
                       </Button>
                     </DialogTrigger>
-                  <DialogContent className="max-w-md rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="h-24 bg-gradient-to-r from-rose-600 to-rose-700 p-6">
-                      <DialogTitle className="text-2xl font-bold text-white tracking-tight">Exit Process</DialogTitle>
-                      <DialogDescription className="text-rose-100 font-medium">Initiate resignation or termination for {employee.name}</DialogDescription>
-                    </div>
-                    <div className="p-8 space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Reason for Exit</Label>
-                        <Select onValueChange={setExitReason}>
-                          <SelectTrigger className="rounded-xl border-slate-200 h-11 bg-slate-50/50">
-                            <SelectValue placeholder="Select reason" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl">
-                            <SelectItem value="Resignation">Voluntary Resignation</SelectItem>
-                            <SelectItem value="Termination">Termination (Performance/Policy)</SelectItem>
-                            <SelectItem value="Retirement">Retirement</SelectItem>
-                            <SelectItem value="Contract End">End of Contract</SelectItem>
-                          </SelectContent>
-                        </Select>
+                    <DialogContent className="max-w-md rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
+                      <div className="h-24 bg-gradient-to-r from-rose-600 to-rose-700 p-6">
+                        <DialogTitle className="text-2xl font-bold text-white tracking-tight">Exit Process</DialogTitle>
+                        <DialogDescription className="text-rose-100 font-medium">Initiate resignation or termination for {employee.name}</DialogDescription>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Notice Period Status</Label>
-                        <Select>
-                          <SelectTrigger className="rounded-xl border-slate-200 h-11 bg-slate-50/50">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl">
-                            <SelectItem value="serving">Serving Notice</SelectItem>
-                            <SelectItem value="waived">Notice Waived</SelectItem>
-                            <SelectItem value="immediate">Immediate Release</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="p-8 space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Reason for Exit</Label>
+                          <Select onValueChange={setExitReason}>
+                            <SelectTrigger className="rounded-xl border-slate-200 h-11 bg-slate-50/50">
+                              <SelectValue placeholder="Select reason" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                              <SelectItem value="Resignation">Voluntary Resignation</SelectItem>
+                              <SelectItem value="Termination">Termination (Performance/Policy)</SelectItem>
+                              <SelectItem value="Retirement">Retirement</SelectItem>
+                              <SelectItem value="Contract End">End of Contract</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Notice Period Status</Label>
+                          <Select>
+                            <SelectTrigger className="rounded-xl border-slate-200 h-11 bg-slate-50/50">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                              <SelectItem value="serving">Serving Notice</SelectItem>
+                              <SelectItem value="waived">Notice Waived</SelectItem>
+                              <SelectItem value="immediate">Immediate Release</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                    </div>
-                    <div className="px-8 pb-8 flex gap-3">
-                      <Button 
-                        variant="ghost" 
-                        className="flex-1 rounded-xl h-11 font-bold text-slate-500 hover:bg-slate-100" 
-                        onClick={() => {
-                          setIsExitDialogOpen(false);
-                          setExitReason(''); // Clear form on cancel
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        className="flex-1 bg-rose-600 hover:bg-rose-700 rounded-xl h-11 font-bold shadow-lg shadow-rose-100 disabled:opacity-50 disabled:cursor-not-allowed" 
-                        onClick={handleInitiateExit}
-                        disabled={!exitReason}
-                      >
-                        Confirm Exit Process
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                      <div className="px-8 pb-8 flex gap-3">
+                        <Button
+                          variant="ghost"
+                          className="flex-1 rounded-xl h-11 font-bold text-slate-500 hover:bg-slate-100"
+                          onClick={() => {
+                            setIsExitDialogOpen(false);
+                            setExitReason(''); // Clear form on cancel
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          className="flex-1 bg-rose-600 hover:bg-rose-700 rounded-xl h-11 font-bold shadow-lg shadow-rose-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={handleInitiateExit}
+                          disabled={!exitReason}
+                        >
+                          Confirm Exit Process
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 )}
               </div>
             </div>

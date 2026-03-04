@@ -142,3 +142,36 @@ DROP TRIGGER IF EXISTS set_attendance_updated_at ON public.attendance;
 CREATE TRIGGER set_attendance_updated_at
   BEFORE UPDATE ON public.attendance
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- 5. HRM MODULE – SCHEMA EXTENSIONS
+-- Additional columns required by the HRM Employees module.
+-- Run these ALTER TABLE statements after the initial schema.
+-- ============================================================
+
+-- HRM-specific columns on employees
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS designation TEXT;          -- Job title / designation
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS location    TEXT;          -- Work location
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS alternate_phone TEXT;      -- Alternate contact
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS blood_group TEXT;          -- Medical info
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS exit_workflow JSONB;       -- Exit management payload
+
+-- Extend the status CHECK to include HRM lifecycle values
+ALTER TABLE public.employees DROP CONSTRAINT IF EXISTS employees_status_check;
+ALTER TABLE public.employees
+  ADD CONSTRAINT employees_status_check
+  CHECK (status IN (
+    'active',
+    'inactive',
+    'on_leave',
+    'terminated',
+    'probation',
+    'onboarding',
+    'exit'
+  ));
+
+-- Allow service-role (backend) to bypass RLS on employees for admin operations
+CREATE POLICY "employees_admin_all" ON public.employees
+  FOR ALL
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');

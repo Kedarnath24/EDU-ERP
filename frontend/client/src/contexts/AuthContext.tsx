@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { setApiToken } from '@/lib/api';
+import { setApiToken, loginUser, logoutUser } from '@/lib/api';
 
 // ─── Helper: persisted token storage ───────────────────────
 const TOKEN_KEY = 'z_erp_session';
@@ -55,49 +55,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // ── Login ──────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string): Promise<{ error?: string }> => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+    const { data, error } = await loginUser(email, password);
 
-      const data = await res.json();
+    if (error) return { error };
 
-      if (!res.ok) {
-        return { error: data.error || 'Login failed' };
-      }
-
-      setSession(data.session);
-      setUser(data.user);
-      // ── Provide the access token to the api.ts client ──
-      setApiToken(data.session?.access_token ?? null);
-      return {};
-    } catch {
-      return { error: 'Network error. Please try again.' };
-    }
+    setSession(data!.session as unknown as Session);
+    setUser(data!.user as unknown as User);
+    setApiToken(data!.session.access_token);
+    return {};
   }, []);
 
   // ── Logout ─────────────────────────────────────────────
   const logout = useCallback(async () => {
+    // setApiToken must be set before calling logoutUser so the Bearer header is sent
     try {
-      if (session?.access_token) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-      }
+      await logoutUser();
     } catch {
       // Ignore network errors on logout
     } finally {
       setSession(null);
       setUser(null);
-      // Clear the token in api.ts so no further calls carry stale credentials
       setApiToken(null);
       localStorage.removeItem(TOKEN_KEY);
-      // Navigation handled by AppRouter guard (watches session state)
     }
-  }, [session]);
+  }, []);
 
   const contextValue = useMemo(() => ({
     session,

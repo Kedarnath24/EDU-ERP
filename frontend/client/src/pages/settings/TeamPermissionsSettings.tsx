@@ -37,6 +37,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { createTeamMember } from "@/lib/api";
 
 type Role = "admin" | "manager" | "member" | "viewer";
 
@@ -113,6 +114,9 @@ const TeamPermissionsSettings = () => {
     const [selectedRole, setSelectedRole] = useState<Role>("member");
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteRole, setInviteRole] = useState<Role>("member");
+    const [invitePassword, setInvitePassword] = useState("");
+    const [inviteConfirmPassword, setInviteConfirmPassword] = useState("");
+    const [inviteLoading, setInviteLoading] = useState(false);
     const [previewRole, setPreviewRole] = useState<Role>("member");
 
     const handleRoleChange = (id: string, newRole: Role) => {
@@ -125,29 +129,58 @@ const TeamPermissionsSettings = () => {
         toast({ title: "Member removed", description: "The member has been removed from the workspace." });
     };
 
-    const handleInvite = () => {
+    const handleInvite = async () => {
         if (!inviteEmail.trim()) {
             toast({ title: "Email required", description: "Please enter an email address.", variant: "destructive" });
             return;
         }
+        if (!invitePassword || !inviteConfirmPassword) {
+            toast({ title: "Password required", description: "Please provide a password and confirmation.", variant: "destructive" });
+            return;
+        }
+        if (invitePassword.length < 8) {
+            toast({ title: "Weak password", description: "Password must be at least 8 characters.", variant: "destructive" });
+            return;
+        }
+        if (invitePassword !== inviteConfirmPassword) {
+            toast({ title: "Password mismatch", description: "Password and confirmation do not match.", variant: "destructive" });
+            return;
+        }
+
+        setInviteLoading(true);
+        const { data, error } = await createTeamMember({
+            email: inviteEmail,
+            password: invitePassword,
+            role: inviteRole,
+            full_name: inviteEmail.split("@")[0],
+        });
+        setInviteLoading(false);
+
+        if (error) {
+            toast({ title: "Failed to create member", description: typeof error === "string" ? error : "An unexpected error occurred.", variant: "destructive" });
+            return;
+        }
+
         const initials = inviteEmail.slice(0, 2).toUpperCase();
         const colors = ["bg-indigo-500", "bg-pink-500", "bg-teal-500", "bg-orange-500"];
         const color = colors[members.length % colors.length];
         setMembers((prev) => [
             ...prev,
             {
-                id: String(Date.now()),
-                name: inviteEmail.split("@")[0],
+                id: data!.user.id,
+                name: data!.employee?.full_name || inviteEmail.split("@")[0],
                 email: inviteEmail,
                 role: inviteRole,
-                status: "invited",
+                status: "active",
                 initials,
                 color,
                 lastActive: "—",
             },
         ]);
-        toast({ title: "Invitation sent", description: `Invite sent to ${inviteEmail}.` });
+        toast({ title: "Member created", description: `${inviteEmail} has been added to the workspace.` });
         setInviteEmail("");
+        setInvitePassword("");
+        setInviteConfirmPassword("");
     };
 
     return (
@@ -181,40 +214,66 @@ const TeamPermissionsSettings = () => {
                         <CardDescription>Send an email invitation for someone to join this workspace.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="flex-1 space-y-1.5">
-                                <Label htmlFor="invite-email">Email Address</Label>
-                                <div className="relative">
-                                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <Input
-                                        id="invite-email"
-                                        placeholder="colleague@company.com"
-                                        className="pl-9"
-                                        value={inviteEmail}
-                                        onChange={(e) => setInviteEmail(e.target.value)}
-                                        onKeyDown={(e) => e.key === "Enter" && handleInvite()}
-                                    />
+                        <div className="space-y-3">
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="flex-1 space-y-1.5">
+                                    <Label htmlFor="invite-email">Email Address</Label>
+                                    <div className="relative">
+                                        <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <Input
+                                            id="invite-email"
+                                            placeholder="colleague@company.com"
+                                            className="pl-9"
+                                            value={inviteEmail}
+                                            onChange={(e) => setInviteEmail(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && void handleInvite()}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label>Role</Label>
+                                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as Role)}>
+                                        <SelectTrigger className="w-36">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="admin">Admin</SelectItem>
+                                            <SelectItem value="manager">Manager</SelectItem>
+                                            <SelectItem value="member">Member</SelectItem>
+                                            <SelectItem value="viewer">Viewer</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1.5 sm:ml-auto">
+                                    <Label className="opacity-0 select-none">Send</Label>
+                                    <Button onClick={() => void handleInvite()} disabled={inviteLoading} className="bg-indigo-600 hover:bg-indigo-700 gap-2 w-full sm:w-auto">
+                                        <UserPlus size={16} /> {inviteLoading ? "Creating…" : "Send Invite"}
+                                    </Button>
                                 </div>
                             </div>
-                            <div className="space-y-1.5">
-                                <Label>Role</Label>
-                                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as Role)}>
-                                    <SelectTrigger className="w-36">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                        <SelectItem value="manager">Manager</SelectItem>
-                                        <SelectItem value="member">Member</SelectItem>
-                                        <SelectItem value="viewer">Viewer</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="opacity-0 select-none">Send</Label>
-                                <Button onClick={handleInvite} className="bg-indigo-600 hover:bg-indigo-700 gap-2 w-full sm:w-auto">
-                                    <UserPlus size={16} /> Send Invite
-                                </Button>
+
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="flex-1 space-y-1.5">
+                                    <Label htmlFor="invite-password">Password</Label>
+                                    <Input
+                                        id="invite-password"
+                                        type="password"
+                                        placeholder="Set password"
+                                        value={invitePassword}
+                                        onChange={(e) => setInvitePassword(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex-1 space-y-1.5">
+                                    <Label htmlFor="invite-confirm">Confirm</Label>
+                                    <Input
+                                        id="invite-confirm"
+                                        type="password"
+                                        placeholder="Confirm password"
+                                        value={inviteConfirmPassword}
+                                        onChange={(e) => setInviteConfirmPassword(e.target.value)}
+                                        onKeyDown={(e) => e.key === "Enter" && void handleInvite()}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </CardContent>

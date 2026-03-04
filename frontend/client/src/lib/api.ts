@@ -7,6 +7,9 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
+// Re-export BASE_URL for anything that needs it outside this module (e.g. AuthContext)
+export { BASE_URL };
+
 // ─────────────────────────────────────────────────────────────
 // Token store
 // AuthContext calls setApiToken() after login / logout so that
@@ -55,6 +58,51 @@ async function apiFetch<T>(
         console.error(`API fetch error [${path}]:`, err);
         return { error: 'Network error. Please check your connection.' };
     }
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// Auth API
+// ─────────────────────────────────────────────────────────────
+
+export interface LoginResponse {
+    message: string;
+    session: {
+        access_token: string;
+        refresh_token: string;
+        expires_in: number;
+        token_type: string;
+    };
+    user: {
+        id: string;
+        email: string;
+        user_metadata?: Record<string, unknown>;
+    };
+}
+
+/**
+ * Authenticate with email + password.
+ * Returns the Supabase session + user on success.
+ */
+export async function loginUser(
+    email: string,
+    password: string
+): Promise<{ data?: LoginResponse; error?: string }> {
+    return apiFetch<LoginResponse>('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+    });
+}
+
+/**
+ * Sign out the current session.
+ * Requires the access token to be set via setApiToken() beforehand.
+ */
+export async function logoutUser(): Promise<{ error?: string }> {
+    const result = await apiFetch<{ message: string }>('/api/auth/logout', {
+        method: 'POST',
+    });
+    return result.error ? { error: result.error } : {};
 }
 
 
@@ -227,4 +275,153 @@ export async function getAttendanceStats(): Promise<{
 }> {
     const result = await apiFetch<{ stats: AttendanceStats }>('/api/attendance/stats');
     return result.error ? { error: result.error } : { data: result.data!.stats };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Team / User Management API
+// ─────────────────────────────────────────────────────────────
+
+export interface CreateTeamMemberPayload {
+    email: string;
+    password: string;
+    role?: 'admin' | 'manager' | 'member' | 'viewer';
+    full_name?: string;
+}
+
+export interface CreateTeamMemberResponse {
+    message: string;
+    user: { id: string; email: string; role: string };
+    employee: Employee | null;
+}
+
+/** Create a new team member (admin-only) */
+export async function createTeamMember(
+    payload: CreateTeamMemberPayload
+): Promise<{ data?: CreateTeamMemberResponse; error?: string }> {
+    const result = await apiFetch<CreateTeamMemberResponse>('/api/auth/create-user', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+    return result.error ? { error: result.error } : { data: result.data! };
+}
+
+// ───────────────────────────────────────────────────────────────
+// HRM Employee Admin API
+// ───────────────────────────────────────────────────────────────
+
+export type EmployeeStatus =
+    | 'active'
+    | 'inactive'
+    | 'on_leave'
+    | 'terminated'
+    | 'probation'
+    | 'onboarding'
+    | 'exit';
+
+/** Extended employee type with HRM-specific fields */
+export interface HRMEmployee extends Employee {
+    designation?: string;
+    location?: string;
+    alternate_phone?: string;
+    blood_group?: string;
+    exit_workflow?: Record<string, unknown> | null;
+}
+
+export interface EmployeeFilters {
+    search?: string;
+    status?: EmployeeStatus | 'all';
+    department?: string;
+    limit?: number;
+    offset?: number;
+}
+
+export interface AddEmployeePayload {
+    full_name: string;
+    email: string;
+    designation?: string;
+    department?: string;
+    location?: string;
+    phone?: string;
+    alternate_phone?: string;
+    join_date?: string;
+    blood_group?: string;
+    status?: EmployeeStatus;
+}
+
+/** List all employees with optional filters (admin) */
+export async function listEmployees(
+    filters: EmployeeFilters = {}
+): Promise<{ data?: HRMEmployee[]; total?: number; error?: string }> {
+    const qs = new URLSearchParams();
+    if (filters.search)     qs.set('search',     filters.search);
+    if (filters.status)     qs.set('status',     filters.status);
+    if (filters.department) qs.set('department', filters.department);
+    if (filters.limit  != null) qs.set('limit',  String(filters.limit));
+    if (filters.offset != null) qs.set('offset', String(filters.offset));
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+
+    const result = await apiFetch<{ employees: HRMEmployee[]; total: number }>(
+        `/api/employees${query}`
+    );
+    return result.error
+        ? { error: result.error }
+        : { data: result.data!.employees, total: result.data!.total };
+}
+
+/** Admin: add a new employee (creates auth user + employee record) */
+export async function addEmployee(
+    payload: AddEmployeePayload
+): Promise<{ data?: HRMEmployee; error?: string }> {
+    const result = await apiFetch<{ employee: HRMEmployee }>('/api/employees', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+    return result.error ? { error: result.error } : { data: result.data!.employee };
+}
+
+/** Fetch a single employee by UUID */
+export async function getEmployeeById(
+    id: string
+): Promise<{ data?: HRMEmployee; error?: string }> {
+    const result = await apiFetch<{ employee: HRMEmployee }>(`/api/employees/${id}`);
+    return result.error ? { error: result.error } : { data: result.data!.employee };
+}
+
+/** Admin: update any employee's profile */
+export async function adminUpdateEmployee(
+    id: string,
+    payload: Partial<HRMEmployee>
+): Promise<{ data?: HRMEmployee; error?: string }> {
+    const result = await apiFetch<{ employee: HRMEmployee }>(`/api/employees/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
+    return result.error ? { error: result.error } : { data: result.data!.employee };
+}
+
+/** Admin: change an employee's status */
+export async function updateEmployeeStatus(
+    id: string,
+    status: EmployeeStatus
+): Promise<{ data?: HRMEmployee; error?: string }> {
+    const result = await apiFetch<{ employee: HRMEmployee }>(`/api/employees/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+    });
+    return result.error ? { error: result.error } : { data: result.data!.employee };
+}
+
+/**
+ * Admin: delete an employee record.
+ * Pass deleteAuth=true to also remove the linked Supabase auth user.
+ */
+export async function deleteEmployee(
+    id: string,
+    deleteAuth = false
+): Promise<{ error?: string }> {
+    const result = await apiFetch<{ message: string }>(
+        `/api/employees/${id}?deleteAuth=${deleteAuth}`,
+        { method: 'DELETE' }
+    );
+    return result.error ? { error: result.error } : {};
 }

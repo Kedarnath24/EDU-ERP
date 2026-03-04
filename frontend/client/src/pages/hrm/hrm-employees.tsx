@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -62,6 +62,14 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { cn } from "@/lib/utils";
+import {
+  listEmployees,
+  addEmployee,
+  adminUpdateEmployee,
+  updateEmployeeStatus,
+  deleteEmployee,
+  type EmployeeStatus,
+} from '@/lib/api';
 
 // HRMAttendance: Employee Management module.
 export default function HRMEmployees() {
@@ -120,7 +128,40 @@ export default function HRMEmployees() {
   
   const { toast } = useToast();
 
-  // Generate PDF Report
+  // ── Fetch employees from Supabase via backend on mount ──────────────────
+  useEffect(() => {
+    void (async () => {
+      const { data, error } = await listEmployees({ limit: 200 });
+      if (error) {
+        toast({ title: 'Failed to load employees', description: error, variant: 'destructive' });
+        return;
+      }
+      if (data && data.length > 0) {
+        setEmployees(
+          data.map(emp => ({
+            ...emp,
+            id: emp.employee_code || emp.id,
+            name: emp.full_name,
+            designation: emp.designation || emp.position || '',
+            department: emp.department || '',
+            email: emp.email || '',
+            phone: emp.phone || '',
+            location: (emp as any).location || '',
+            joining: emp.join_date || '',
+            status: emp.status || 'active',
+            avatar: (emp.full_name || '')
+              .split(' ')
+              .map((n: string) => n[0])
+              .join('')
+              .toUpperCase()
+              .substring(0, 2),
+            exitWorkflow: (emp as any).exit_workflow || null,
+          })) as any[]
+        );
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const generatePDFReport = (employee: any, type: 'clearance' | 'report' = 'report') => {
     const doc = new jsPDF();
     
@@ -347,6 +388,23 @@ export default function HRMEmployees() {
           }
           break;
           
+        case 'delete_employee':
+          if (employeeId) {
+            const empToDelete = employees.find(emp => emp.id === employeeId);
+            const { error: deleteErr } = await deleteEmployee(employeeId, false);
+            if (deleteErr) {
+              toast({ title: 'Delete Failed', description: deleteErr, variant: 'destructive' });
+            } else {
+              setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+              toast({
+                title: 'Employee Removed',
+                description: `${empToDelete?.name || 'Employee'} has been removed from the system.`,
+                variant: 'destructive',
+              });
+            }
+          }
+          break;
+
         default:
           toast({
             title: "Feature Coming Soon",
@@ -984,7 +1042,7 @@ export default function HRMEmployees() {
     }, 1200);
   };
 
-  const handleAddEmployee = () => {
+  const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.designation || !newEmployee.department) {
       toast({ 
         title: "Validation Error", 
@@ -994,69 +1052,83 @@ export default function HRMEmployees() {
       return;
     }
 
-    const id = `EMP${String(employees.length + 1).padStart(3, '0')}`;
-    const avatar = newEmployee.name.split(' ').map(n => n[0]).join('').toUpperCase();
-    
-    // Convert File objects to URLs for storage (in a real app, upload to server)
-    const photoUrl = newEmployee.photo ? URL.createObjectURL(newEmployee.photo) : undefined;
-    
-    const employeeToAdd = {
-      ...newEmployee,
-      id,
-      avatar,
-      status: 'onboarding',
-      photo: photoUrl,
-      // Store document references (in production, these would be uploaded to cloud storage)
-      documents: {
-        aadhaar: newEmployee.aadhaarDoc?.name,
-        pan: newEmployee.panDoc?.name,
-        resume: newEmployee.resume?.name
-      },
-      exitWorkflow: null
-    };
+    setLoadingStates(prev => ({ ...prev, add_employee: true }));
+    try {
+      const { data, error } = await addEmployee({
+        full_name: newEmployee.name,
+        email: newEmployee.email,
+        designation: newEmployee.designation,
+        department: newEmployee.department,
+        location: newEmployee.location,
+        phone: newEmployee.phone,
+        alternate_phone: newEmployee.alternatePhone,
+        join_date: newEmployee.joining,
+        blood_group: newEmployee.bloodGroup,
+        status: 'onboarding',
+      });
 
-    setEmployees([employeeToAdd, ...employees]);
-    setIsAddDialogOpen(false);
-    setNewEmployee({
-      name: '',
-      designation: '',
-      department: '',
-      location: '',
-      email: '',
-      phone: '',
-      alternatePhone: '',
-      bloodGroup: '',
-      joining: new Date().toISOString().split('T')[0],
-      photo: null,
-      bankName: '',
-      bankBranch: '',
-      accountNumber: '',
-      ifscCode: '',
-      panNumber: '',
-      aadhaarNumber: '',
-      aadhaarDoc: null,
-      panDoc: null,
-      resume: null
-    });
-    
-    toast({ 
-      title: "✅ Employee Profile Created", 
-      description: `${newEmployee.name} has been added with complete onboarding details.`,
-      className: "rounded-xl"
-    });
+      if (error) {
+        toast({ title: 'Failed to add employee', description: error, variant: 'destructive' });
+        return;
+      }
+
+      const avatar = newEmployee.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
+      setEmployees(prev => [
+        {
+          ...data!,
+          id: data!.employee_code || data!.id,
+          name: data!.full_name,
+          designation: newEmployee.designation,
+          department: newEmployee.department,
+          email: newEmployee.email,
+          phone: newEmployee.phone || '',
+          location: newEmployee.location,
+          joining: (data! as any).join_date || newEmployee.joining,
+          status: 'onboarding',
+          avatar,
+          exitWorkflow: null,
+        } as any,
+        ...prev,
+      ]);
+
+      setIsAddDialogOpen(false);
+      setNewEmployee({
+        name: '', designation: '', department: '', location: '', email: '',
+        phone: '', alternatePhone: '', bloodGroup: '',
+        joining: new Date().toISOString().split('T')[0],
+        photo: null, bankName: '', bankBranch: '', accountNumber: '',
+        ifscCode: '', panNumber: '', aadhaarNumber: '',
+        aadhaarDoc: null, panDoc: null, resume: null,
+      });
+
+      toast({
+        title: "✅ Employee Profile Created",
+        description: `${newEmployee.name} has been added with complete onboarding details.`,
+        className: "rounded-xl",
+      });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to add employee. Please try again.', variant: 'destructive' });
+    } finally {
+      setLoadingStates(prev => ({ ...prev, add_employee: false }));
+    }
   };
 
-  const handleUpdateStatus = (employeeId: string, newStatus: string, workflow?: any) => {
-    setEmployees(employees.map(emp => 
-      emp.id === employeeId ? { ...emp, status: newStatus, exitWorkflow: workflow || emp.exitWorkflow } : emp
-    ));
-    
-    if (!workflow) {
-      const statusLabel = statusConfig[newStatus]?.label || newStatus;
-      toast({
-        title: "Status Updated",
-        description: `Employee status changed to ${statusLabel}.`
-      });
+  const handleUpdateStatus = async (employeeId: string, newStatus: string, workflow?: any) => {
+    try {
+      const { error } = await updateEmployeeStatus(employeeId, newStatus as EmployeeStatus);
+      if (error) {
+        toast({ title: 'Status Update Failed', description: error, variant: 'destructive' });
+        return;
+      }
+      setEmployees(prev => prev.map(emp => 
+        emp.id === employeeId ? { ...emp, status: newStatus, exitWorkflow: workflow || emp.exitWorkflow } : emp
+      ));
+      if (!workflow) {
+        const statusLabel = statusConfig[newStatus]?.label || newStatus;
+        toast({ title: 'Status Updated', description: `Employee status changed to ${statusLabel}.` });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update status.', variant: 'destructive' });
     }
   };
 
@@ -1457,7 +1529,7 @@ export default function HRMEmployees() {
                   
                   <div className="px-8 pb-8 pt-4 border-t border-slate-100 flex gap-3 bg-slate-50">
                     <Button variant="ghost" className="flex-1 rounded-xl h-12 font-bold text-slate-500 hover:bg-slate-100" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                    <Button className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl h-12 font-bold shadow-lg shadow-blue-200" onClick={handleAddEmployee}>
+                    <Button className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl h-12 font-bold shadow-lg shadow-blue-200" onClick={() => void handleAddEmployee()}>
                       <UserPlus className="h-4 w-4 mr-2" />
                       Create Employee Profile
                     </Button>
@@ -2782,7 +2854,7 @@ export default function HRMEmployees() {
               Cancel
             </Button>
             <Button 
-              onClick={handleUpdateEmployee}
+              onClick={() => void handleUpdateEmployee()}
               className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               Update Employee

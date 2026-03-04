@@ -11,18 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Shield, 
+import {
+  Shield,
   Plus,
   Download,
   Search,
@@ -53,97 +53,17 @@ export default function Insurance() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const { toast } = useToast();
-  
-  // Mock data - Insurance policies
-  const [policies, setPolicies] = useState([
-    {
-      id: 'POL001',
-      employee: 'John Smith',
-      empId: 'EMP001',
-      policyType: 'Health Insurance',
-      provider: 'XYZ Insurance Co.',
-      policyNumber: 'HI-2025-001',
-      coverage: '$50,000',
-      premium: '$200/month',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      avatar: 'JS'
-    },
-    {
-      id: 'POL002',
-      employee: 'Sarah Johnson',
-      empId: 'EMP002',
-      policyType: 'Life Insurance',
-      provider: 'ABC Life Insurance',
-      policyNumber: 'LI-2025-002',
-      coverage: '$100,000',
-      premium: '$150/month',
-      status: 'active',
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      avatar: 'SJ'
-    },
-    {
-      id: 'POL003',
-      employee: 'Mike Brown',
-      empId: 'EMP003',
-      policyType: 'Health Insurance',
-      provider: 'XYZ Insurance Co.',
-      policyNumber: 'HI-2025-003',
-      coverage: '$50,000',
-      premium: '$200/month',
-      status: 'pending',
-      startDate: '2025-06-15',
-      endDate: '2026-06-14',
-      avatar: 'MB'
-    }
-  ]);
 
-  // Mock data - Claims
-  const [claims, setClaims] = useState([
-    {
-      id: 'CLM001',
-      employee: 'Emily Davis',
-      empId: 'EMP004',
-      policyType: 'Health Insurance',
-      claimAmount: '$2,500',
-      claimDate: '2025-06-10',
-      description: 'Medical treatment - Emergency',
-      status: 'approved',
-      approvedAmount: '$2,500',
-      avatar: 'ED'
-    },
-    {
-      id: 'CLM002',
-      employee: 'Alex Wilson',
-      empId: 'EMP005',
-      policyType: 'Health Insurance',
-      claimAmount: '$1,200',
-      claimDate: '2025-06-12',
-      description: 'Dental treatment',
-      status: 'pending',
-      approvedAmount: '-',
-      avatar: 'AW'
-    },
-    {
-      id: 'CLM003',
-      employee: 'Lisa Anderson',
-      empId: 'EMP006',
-      policyType: 'Health Insurance',
-      claimAmount: '$800',
-      claimDate: '2025-06-05',
-      description: 'Eye checkup and glasses',
-      status: 'rejected',
-      approvedAmount: '$0',
-      avatar: 'LA'
-    }
-  ]);
+  // Initializing empty data - to be fetched from API
+  const [policies, setPolicies] = useState<any[]>([]);
+
+  // Initializing empty data
+  const [claims, setClaims] = useState<any[]>([]);
 
   const filteredPolicies = useMemo(() => {
     return policies.filter(p => {
-      const matchesSearch = p.employee.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.policyNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = p.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.policyNumber.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesType = typeFilter === 'all' || p.policyType === typeFilter;
       return matchesSearch && matchesType;
     });
@@ -151,8 +71,8 @@ export default function Insurance() {
 
   const filteredClaims = useMemo(() => {
     return claims.filter(c => {
-      const matchesSearch = c.employee.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          c.id.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = c.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.id.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesType = typeFilter === 'all' || c.policyType === typeFilter;
       return matchesSearch && matchesType;
     });
@@ -160,7 +80,7 @@ export default function Insurance() {
 
   const handleExport = (format: 'excel' | 'pdf') => {
     toast({ title: `Exporting ${activeTab}...` });
-    
+
     if (format === 'excel') {
       const data = activeTab === 'policies' ? filteredPolicies : filteredClaims;
       const ws = XLSX.utils.json_to_sheet(data);
@@ -188,10 +108,10 @@ export default function Insurance() {
   };
 
   const handleClaimAction = (claimId: string, status: 'approved' | 'rejected') => {
-    setClaims(claims.map(c => 
+    setClaims(claims.map(c =>
       c.id === claimId ? { ...c, status, approvedAmount: status === 'approved' ? c.claimAmount : '$0' } : c
     ));
-    toast({ 
+    toast({
       title: `Claim ${status.charAt(0).toUpperCase() + status.slice(1)}`,
       description: `Claim ${claimId} has been ${status}.`
     });
@@ -231,8 +151,8 @@ export default function Insurance() {
           <div className="flex flex-1 items-center gap-3">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input 
-                placeholder="Search by name or ID..." 
+              <Input
+                placeholder="Search by name or ID..."
                 className="pl-9 bg-white"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -397,7 +317,7 @@ export default function Insurance() {
                   <FileText className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900">${Math.round(policies.reduce((acc, p) => acc + parseInt(p.coverage.replace(/[$, ]/g, '')), 0) / 1000)}K</p>
+                  <p className="text-2xl font-bold text-slate-900">${Math.round(policies.reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0) / 1000)}K</p>
                   <p className="text-xs text-slate-600">Total Coverage</p>
                 </div>
               </div>
@@ -646,15 +566,15 @@ export default function Insurance() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Active Policies</span>
-                      <span className="font-semibold">185</span>
+                      <span className="font-semibold">{policies.filter(p => p.policyType === 'Health Insurance').length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Total Coverage</span>
-                      <span className="font-semibold">$9.25M</span>
+                      <span className="font-semibold">${(policies.filter(p => p.policyType === 'Health Insurance').reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0) / 1000000).toFixed(2)}M</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Monthly Premium</span>
-                      <span className="font-semibold">$37K</span>
+                      <span className="font-semibold">${(policies.filter(p => p.policyType === 'Health Insurance').reduce((acc, p) => acc + parseInt(p.premium?.replace(/[A-Za-z$/, ]/g, '') || '0'), 0) / 1000).toFixed(1)}K</span>
                     </div>
                   </div>
                 </CardContent>
@@ -671,15 +591,15 @@ export default function Insurance() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Active Policies</span>
-                      <span className="font-semibold">150</span>
+                      <span className="font-semibold">{policies.filter(p => p.policyType === 'Life Insurance').length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Total Coverage</span>
-                      <span className="font-semibold">$15M</span>
+                      <span className="font-semibold">${(policies.filter(p => p.policyType === 'Life Insurance').reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0) / 1000000).toFixed(2)}M</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Monthly Premium</span>
-                      <span className="font-semibold">$22.5K</span>
+                      <span className="font-semibold">${(policies.filter(p => p.policyType === 'Life Insurance').reduce((acc, p) => acc + parseInt(p.premium?.replace(/[A-Za-z$/, ]/g, '') || '0'), 0) / 1000).toFixed(1)}K</span>
                     </div>
                   </div>
                 </CardContent>
@@ -696,15 +616,15 @@ export default function Insurance() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Active Policies</span>
-                      <span className="font-semibold">120</span>
+                      <span className="font-semibold">{policies.filter(p => p.policyType === 'Accident Insurance').length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Total Coverage</span>
-                      <span className="font-semibold">$6M</span>
+                      <span className="font-semibold">${(policies.filter(p => p.policyType === 'Accident Insurance').reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0) / 1000000).toFixed(2)}M</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Monthly Premium</span>
-                      <span className="font-semibold">$12K</span>
+                      <span className="font-semibold">${(policies.filter(p => p.policyType === 'Accident Insurance').reduce((acc, p) => acc + parseInt(p.premium?.replace(/[A-Za-z$/, ]/g, '') || '0'), 0) / 1000).toFixed(1)}K</span>
                     </div>
                   </div>
                 </CardContent>
@@ -738,7 +658,7 @@ export default function Insurance() {
                     <div>
                       <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Health Coverage</p>
                       <h3 className="text-3xl font-black text-emerald-700">
-                        ${Math.round(policies.filter(p => p.policyType === 'Health Insurance').reduce((acc, p) => acc + parseInt(p.coverage.replace(/[$, ]/g, '')), 0) / 1000)}K
+                        ${Math.round(policies.filter(p => p.policyType === 'Health Insurance').reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0) / 1000)}K
                       </h3>
                       <p className="text-xs text-emerald-600 mt-1">{policies.filter(p => p.policyType === 'Health Insurance').length} policies</p>
                     </div>
@@ -754,7 +674,7 @@ export default function Insurance() {
                     <div>
                       <p className="text-xs font-bold text-violet-600 uppercase tracking-wider mb-1">Life Coverage</p>
                       <h3 className="text-3xl font-black text-violet-700">
-                        ${Math.round(policies.filter(p => p.policyType === 'Life Insurance').reduce((acc, p) => acc + parseInt(p.coverage.replace(/[$, ]/g, '')), 0) / 1000)}K
+                        ${Math.round(policies.filter(p => p.policyType === 'Life Insurance').reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0) / 1000)}K
                       </h3>
                       <p className="text-xs text-violet-600 mt-1">{policies.filter(p => p.policyType === 'Life Insurance').length} policies</p>
                     </div>
@@ -770,7 +690,7 @@ export default function Insurance() {
                     <div>
                       <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Avg Per Employee</p>
                       <h3 className="text-3xl font-black text-amber-700">
-                        ${Math.round((policies.reduce((acc, p) => acc + parseInt(p.coverage.replace(/[$, ]/g, '')), 0) / policies.length) / 1000)}K
+                        ${Math.round((policies.reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0) / (policies.length || 1)) / 1000)}K
                       </h3>
                       <p className="text-xs text-amber-600 mt-1">coverage amount</p>
                     </div>
@@ -795,9 +715,10 @@ export default function Insurance() {
                 <CardContent className="space-y-4">
                   {['Health Insurance', 'Life Insurance', 'Accident Insurance'].map(type => {
                     const typePolicies = policies.filter(p => p.policyType === type);
-                    const totalCoverage = typePolicies.reduce((acc, p) => acc + parseInt(p.coverage.replace(/[$, ]/g, '')), 0);
-                    const percentage = (totalCoverage / policies.reduce((acc, p) => acc + parseInt(p.coverage.replace(/[$, ]/g, '')), 0)) * 100;
-                    
+                    const totalCoverage = typePolicies.reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0);
+                    const allCoverage = policies.reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0);
+                    const percentage = allCoverage > 0 ? (totalCoverage / allCoverage) * 100 : 0;
+
                     return (
                       <div key={type} className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
@@ -805,13 +726,13 @@ export default function Insurance() {
                           <span className="font-bold text-slate-900">${(totalCoverage / 1000).toFixed(0)}K</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <Progress 
-                            value={percentage} 
+                          <Progress
+                            value={percentage}
                             className={cn(
                               "h-2 flex-1",
-                              type === 'Health Insurance' ? "[&>div]:bg-emerald-500" : 
-                              type === 'Life Insurance' ? "[&>div]:bg-violet-500" : "[&>div]:bg-blue-500"
-                            )} 
+                              type === 'Health Insurance' ? "[&>div]:bg-emerald-500" :
+                                type === 'Life Insurance' ? "[&>div]:bg-violet-500" : "[&>div]:bg-blue-500"
+                            )}
                           />
                           <span className="text-xs font-bold text-slate-500 w-12 text-right">{percentage.toFixed(1)}%</span>
                         </div>
@@ -832,12 +753,13 @@ export default function Insurance() {
                 <CardContent className="space-y-4">
                   {Array.from(new Set(policies.map(p => p.provider))).map(provider => {
                     const providerPolicies = policies.filter(p => p.provider === provider);
-                    const totalCoverage = providerPolicies.reduce((acc, p) => acc + parseInt(p.coverage.replace(/[$, ]/g, '')), 0);
-                    const maxCoverage = Math.max(...Array.from(new Set(policies.map(p => p.provider))).map(prov => 
-                      policies.filter(p => p.provider === prov).reduce((acc, p) => acc + parseInt(p.coverage.replace(/[$, ]/g, '')), 0)
-                    ));
-                    const percentage = (totalCoverage / maxCoverage) * 100;
-                    
+                    const totalCoverage = providerPolicies.reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0);
+                    const providerCoverages = Array.from(new Set(policies.map(p => p.provider))).map(prov =>
+                      policies.filter(p => p.provider === prov).reduce((acc, p) => acc + parseInt(p.coverage?.replace(/[$, ]/g, '') || '0'), 0)
+                    );
+                    const maxCoverage = providerCoverages.length > 0 ? Math.max(...providerCoverages) : 0;
+                    const percentage = maxCoverage > 0 ? (totalCoverage / maxCoverage) * 100 : 0;
+
                     return (
                       <div key={provider} className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
@@ -898,11 +820,11 @@ export default function Insurance() {
                         </TableCell>
                         <TableCell className="text-right text-sm font-medium text-slate-700">{policy.premium}</TableCell>
                         <TableCell>
-                          <Badge 
+                          <Badge
                             className={cn(
                               "font-bold text-xs",
-                              policy.status === 'active' ? "bg-emerald-100 text-emerald-700" : 
-                              policy.status === 'pending' ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-700"
+                              policy.status === 'active' ? "bg-emerald-100 text-emerald-700" :
+                                policy.status === 'pending' ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-700"
                             )}
                           >
                             {policy.status}

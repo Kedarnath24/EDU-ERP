@@ -91,10 +91,6 @@ export default function ProfileDropdown() {
 
           {/* Profile Actions */}
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={handleViewOrgDetails} className="cursor-pointer">
-              <Building2 className="mr-2 h-4 w-4" />
-              <span>View Org Details</span>
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleMyAccount} className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />
               <span>My Account</span>

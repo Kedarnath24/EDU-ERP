@@ -278,6 +278,93 @@ export async function getAttendanceStats(): Promise<{
 }
 
 // ─────────────────────────────────────────────────────────────
+// HRM Attendance API (Admin — all employees)
+// ─────────────────────────────────────────────────────────────
+
+export interface TodayAttendanceRow {
+    id: string;
+    employee_id: string;
+    name: string;
+    department: string;
+    checkIn: string;
+    checkOut: string;
+    status: string;
+    hours: string;
+    avatar: string;
+    avatar_url?: string | null;
+}
+
+export interface TodayAttendanceSummary {
+    total: number;
+    present: number;
+    absent: number;
+    on_leave: number;
+    late: number;
+}
+
+export interface AllTodayResponse {
+    attendance: TodayAttendanceRow[];
+    summary: TodayAttendanceSummary;
+}
+
+/** HRM: Fetch today's attendance for ALL employees */
+export async function getAllTodayAttendance(): Promise<{
+    data?: AllTodayResponse;
+    error?: string;
+}> {
+    const result = await apiFetch<AllTodayResponse>('/api/attendance/all-today');
+    return result.error ? { error: result.error } : { data: result.data! };
+}
+
+export interface DailyAttendanceEntry {
+    date: string;
+    checkIn: string;
+    checkOut: string;
+    status: string;
+    hours: string;
+    location: string;
+}
+
+export interface MonthlyEmployeeSummary {
+    id: string;
+    employee_id: string;
+    name: string;
+    department: string;
+    email: string;
+    joinDate: string | null;
+    avatar: string;
+    avatar_url?: string | null;
+    present: number;
+    absent: number;
+    late: number;
+    leave: number;
+    overtime: string;
+    dailyAttendance: DailyAttendanceEntry[];
+}
+
+export interface AllMonthlyResponse {
+    month: string;
+    summary: MonthlyEmployeeSummary[];
+}
+
+/** HRM: Fetch monthly attendance summary for ALL employees */
+export async function getAllMonthlyAttendance(params?: {
+    month?: string; // YYYY-MM
+}): Promise<{
+    data?: AllMonthlyResponse;
+    error?: string;
+}> {
+    const qs = new URLSearchParams();
+    if (params?.month) qs.set('month', params.month);
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+
+    const result = await apiFetch<AllMonthlyResponse>(
+        `/api/attendance/all-monthly${query}`
+    );
+    return result.error ? { error: result.error } : { data: result.data! };
+}
+
+// ─────────────────────────────────────────────────────────────
 // Team / User Management API
 // ─────────────────────────────────────────────────────────────
 
@@ -353,10 +440,10 @@ export async function listEmployees(
     filters: EmployeeFilters = {}
 ): Promise<{ data?: HRMEmployee[]; total?: number; error?: string }> {
     const qs = new URLSearchParams();
-    if (filters.search)     qs.set('search',     filters.search);
-    if (filters.status)     qs.set('status',     filters.status);
+    if (filters.search) qs.set('search', filters.search);
+    if (filters.status) qs.set('status', filters.status);
     if (filters.department) qs.set('department', filters.department);
-    if (filters.limit  != null) qs.set('limit',  String(filters.limit));
+    if (filters.limit != null) qs.set('limit', String(filters.limit));
     if (filters.offset != null) qs.set('offset', String(filters.offset));
     const query = qs.toString() ? `?${qs.toString()}` : '';
 
@@ -421,6 +508,112 @@ export async function deleteEmployee(
 ): Promise<{ error?: string }> {
     const result = await apiFetch<{ message: string }>(
         `/api/employees/${id}?deleteAuth=${deleteAuth}`,
+        { method: 'DELETE' }
+    );
+    return result.error ? { error: result.error } : {};
+}
+
+// ─────────────────────────────────────────────────────────────
+// Leave Request API
+// ─────────────────────────────────────────────────────────────
+
+export interface LeaveRequest {
+    id: string;
+    employee_id: string;
+    leave_type: string;
+    start_date: string;
+    end_date: string;
+    days: number;
+    reason?: string | null;
+    attachment_url?: string | null;
+    status: 'pending' | 'approved' | 'rejected';
+    created_at: string;
+    updated_at: string;
+    // Joined employee fields
+    employee_name?: string | null;
+    employee_email?: string | null;
+    employee_department?: string | null;
+    employee_avatar_url?: string | null;
+    employee_code?: string | null;
+}
+
+export interface LeaveRequestSummary {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+}
+
+export interface AllLeaveResponse {
+    leave_requests: LeaveRequest[];
+    summary: LeaveRequestSummary;
+}
+
+/** Employee: create a new leave request */
+export async function createLeaveRequest(payload: {
+    leave_type: string;
+    start_date: string;
+    end_date: string;
+    reason?: string;
+}): Promise<{ data?: LeaveRequest; error?: string }> {
+    const result = await apiFetch<{ leave_request: LeaveRequest }>('/api/leave', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+    return result.error ? { error: result.error } : { data: result.data!.leave_request };
+}
+
+/** Employee: get own leave requests */
+export async function getMyLeaveRequests(): Promise<{
+    data?: LeaveRequest[];
+    error?: string;
+}> {
+    const result = await apiFetch<{ leave_requests: LeaveRequest[] }>('/api/leave/my');
+    return result.error ? { error: result.error } : { data: result.data!.leave_requests };
+}
+
+/** HRM Admin: get all leave requests */
+export async function getAllLeaveRequests(params?: {
+    status?: 'pending' | 'approved' | 'rejected' | 'all';
+    limit?: number;
+}): Promise<{ data?: AllLeaveResponse; error?: string }> {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set('status', params.status);
+    if (params?.limit) qs.set('limit', String(params.limit));
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+
+    const result = await apiFetch<AllLeaveResponse>(`/api/leave/all${query}`);
+    return result.error ? { error: result.error } : { data: result.data! };
+}
+
+/** HRM Admin: approve a leave request */
+export async function approveLeaveRequest(
+    id: string
+): Promise<{ data?: LeaveRequest; error?: string }> {
+    const result = await apiFetch<{ leave_request: LeaveRequest }>(
+        `/api/leave/${id}/approve`,
+        { method: 'PATCH' }
+    );
+    return result.error ? { error: result.error } : { data: result.data!.leave_request };
+}
+
+/** HRM Admin: reject a leave request */
+export async function rejectLeaveRequest(
+    id: string
+): Promise<{ data?: LeaveRequest; error?: string }> {
+    const result = await apiFetch<{ leave_request: LeaveRequest }>(
+        `/api/leave/${id}/reject`,
+        { method: 'PATCH' }
+    );
+    return result.error ? { error: result.error } : { data: result.data!.leave_request };
+}
+
+/** Employee: cancel own pending leave request */
+export async function cancelLeaveRequest(
+    id: string
+): Promise<{ error?: string }> {
+    const result = await apiFetch<{ message: string }>(
+        `/api/leave/${id}`,
         { method: 'DELETE' }
     );
     return result.error ? { error: result.error } : {};

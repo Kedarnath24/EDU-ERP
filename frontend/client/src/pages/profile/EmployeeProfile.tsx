@@ -34,19 +34,13 @@ import {
   getMyEmployee,
   updateMyEmployee,
   getAttendanceHistory,
+  getMyLeaveRequests,
+  createLeaveRequest,
+  cancelLeaveRequest,
   type Employee as EmployeeData,
   type AttendanceRecord as AttRec,
+  type LeaveRequest,
 } from '@/lib/api';
-
-interface LeaveRequest {
-  id: string;
-  type: string;
-  startDate: string;
-  endDate: string;
-  days: number;
-  status: 'Approved' | 'Pending' | 'Rejected';
-  reason?: string;
-}
 
 
 
@@ -69,6 +63,13 @@ export default function EmployeeProfile() {
   const [showViewLeaveModal, setShowViewLeaveModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState<LeaveRequest | null>(null);
 
+  // ── Leave form state ──
+  const [leaveStartDate, setLeaveStartDate] = useState('');
+  const [leaveEndDate, setLeaveEndDate] = useState('');
+  const [leaveReason, setLeaveReason] = useState('');
+  const [submittingLeave, setSubmittingLeave] = useState(false);
+  const [cancellingLeaveId, setCancellingLeaveId] = useState<string | null>(null);
+
   const [leaveFile, setLeaveFile] = useState<File | null>(null);
   const [leavePreviewUrl, setLeavePreviewUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -83,6 +84,10 @@ export default function EmployeeProfile() {
   const [loadingEmployee, setLoadingEmployee] = useState(true);
   const [loadingAttendance, setLoadingAttendance] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+
+  // ── Leave requests from backend ──
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [loadingLeaves, setLoadingLeaves] = useState(true);
 
   // Edit form state (initialised when modal opens)
   const [editName, setEditName] = useState('');
@@ -107,7 +112,15 @@ export default function EmployeeProfile() {
     setLoadingAttendance(false);
   }, []);
 
-  useEffect(() => { fetchEmployee(); fetchAttendance(); }, [fetchEmployee, fetchAttendance]);
+  const fetchLeaveRequests = useCallback(async () => {
+    setLoadingLeaves(true);
+    const { data, error } = await getMyLeaveRequests();
+    if (data) setLeaveRequests(data);
+    if (error) toast({ title: 'Error', description: error, variant: 'destructive' });
+    setLoadingLeaves(false);
+  }, [toast]);
+
+  useEffect(() => { fetchEmployee(); fetchAttendance(); fetchLeaveRequests(); }, [fetchEmployee, fetchAttendance, fetchLeaveRequests]);
 
   // Derive display values: prefer real employee data, fallback to auth metadata
   const authName: string =
@@ -138,12 +151,50 @@ export default function EmployeeProfile() {
     toast({ title: 'Profile Updated', description: 'Your profile has been saved.' });
   };
 
-  const handleSubmitLeave = () => {
-    setShowLeaveModal(false);
-    toast({
-      title: "Leave Request Submitted",
-      description: "Your leave request has been submitted for approval."
+  const handleSubmitLeave = async () => {
+    const leaveType = leaveTypeValue === 'Other' ? (otherLeaveType || 'Other') : leaveTypeValue;
+    if (!leaveStartDate || !leaveEndDate) {
+      toast({ title: 'Missing Dates', description: 'Please select start and end dates.', variant: 'destructive' });
+      return;
+    }
+    if (new Date(leaveEndDate) < new Date(leaveStartDate)) {
+      toast({ title: 'Invalid Dates', description: 'End date must be after start date.', variant: 'destructive' });
+      return;
+    }
+    setSubmittingLeave(true);
+    const { data, error } = await createLeaveRequest({
+      leave_type: leaveType,
+      start_date: leaveStartDate,
+      end_date: leaveEndDate,
+      reason: leaveReason || undefined,
     });
+    setSubmittingLeave(false);
+    if (error) {
+      toast({ title: 'Submission Failed', description: error, variant: 'destructive' });
+      return;
+    }
+    setShowLeaveModal(false);
+    setLeaveStartDate('');
+    setLeaveEndDate('');
+    setLeaveReason('');
+    setLeaveTypeValue('Annual Leave');
+    setOtherLeaveType('');
+    setLeaveFile(null);
+    setLeavePreviewUrl(null);
+    toast({ title: 'Leave Request Submitted', description: 'Your leave request has been sent for approval.' });
+    fetchLeaveRequests(); // refresh the list
+  };
+
+  const handleCancelLeave = async (id: string) => {
+    setCancellingLeaveId(id);
+    const { error } = await cancelLeaveRequest(id);
+    setCancellingLeaveId(null);
+    if (error) {
+      toast({ title: 'Cancel Failed', description: error, variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Leave Request Cancelled', description: 'Your pending leave request has been cancelled.' });
+    fetchLeaveRequests();
   };
 
   useEffect(() => {
@@ -203,32 +254,11 @@ export default function EmployeeProfile() {
     },
   ];
 
-  const leaveRequests: LeaveRequest[] = [
-    {
-      id: '1',
-      type: 'Annual Leave',
-      startDate: '2026-02-10',
-      endDate: '2026-02-14',
-      days: 5,
-      status: 'Approved',
-    },
-    {
-      id: '2',
-      type: 'Sick Leave',
-      startDate: '2026-01-20',
-      endDate: '2026-01-21',
-      days: 2,
-      status: 'Approved',
-    },
-    {
-      id: '3',
-      type: 'Personal Leave',
-      startDate: '2026-03-05',
-      endDate: '2026-03-05',
-      days: 1,
-      status: 'Pending',
-    },
-  ];
+  // Leave balance derived from real data
+  const approvedLeaves = leaveRequests.filter(l => l.status === 'approved');
+  const pendingLeaves = leaveRequests.filter(l => l.status === 'pending');
+  const usedDays = approvedLeaves.reduce((sum, l) => sum + l.days, 0);
+  const pendingDays = pendingLeaves.reduce((sum, l) => sum + l.days, 0);
 
   const payrollRecords: PayrollRecord[] = [
     {
@@ -279,33 +309,35 @@ export default function EmployeeProfile() {
     onsite: { label: 'On-site', icon: Users, color: 'bg-orange-100 text-orange-700' },
   };
 
-  // Leave balance data
+  // Leave balance data (total is a policy constant; rest derived from API)
   const leaveBalance = {
     total: 20,
-    used: 7,
-    pending: 1,
+    used: usedDays,
+    pending: pendingLeaves.length,
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'Approved':
-      case 'Success':
-      case 'Active':
-      case 'Present':
+    switch (status.toLowerCase()) {
+      case 'approved':
+      case 'success':
+      case 'active':
+      case 'present':
         return 'default';
-      case 'Pending':
+      case 'pending':
         return 'outline';
-      case 'Rejected':
-      case 'Failed':
-      case 'Absent':
+      case 'rejected':
+      case 'failed':
+      case 'absent':
         return 'destructive';
-      case 'Leave':
-      case 'Holiday':
+      case 'leave':
+      case 'holiday':
         return 'secondary';
       default:
         return 'default';
     }
   };
+
+  const formatLeaveStatus = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
 
   const EditProfileModal = () => (
     <Dialog open={showEditModal} onOpenChange={(v) => {
@@ -406,16 +438,16 @@ export default function EmployeeProfile() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
-              <Input id="startDate" type="date" />
+              <Input id="startDate" type="date" value={leaveStartDate} onChange={e => setLeaveStartDate(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="endDate">End Date</Label>
-              <Input id="endDate" type="date" />
+              <Input id="endDate" type="date" value={leaveEndDate} onChange={e => setLeaveEndDate(e.target.value)} />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="reason">Description</Label>
-            <Textarea id="reason" placeholder="Reason for leave" />
+            <Textarea id="reason" placeholder="Reason for leave" value={leaveReason} onChange={e => setLeaveReason(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="leaveAttachment">Attach Document (optional)</Label>
@@ -506,6 +538,7 @@ export default function EmployeeProfile() {
         <DialogFooter>
           <Button
             variant="outline"
+            disabled={submittingLeave}
             onClick={() => {
               setShowLeaveModal(false);
               setLeaveFile(null);
@@ -515,15 +548,16 @@ export default function EmployeeProfile() {
             Cancel
           </Button>
           <Button
-            onClick={() => {
-              handleSubmitLeave();
-              setLeaveFile(null);
-              setLeavePreviewUrl(null);
-            }}
+            onClick={handleSubmitLeave}
+            disabled={submittingLeave || !leaveStartDate || !leaveEndDate}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Submit Request
+            {submittingLeave ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CheckCircle className="h-4 w-4 mr-2" />
+            )}
+            {submittingLeave ? 'Submitting...' : 'Submit Request'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -838,25 +872,25 @@ export default function EmployeeProfile() {
             <div className="grid gap-4 md:grid-cols-4">
               <StatsCard
                 title="Total Leaves"
-                value={leaveBalance.total.toString()}
+                value={loadingLeaves ? '...' : leaveBalance.total.toString()}
                 description="Annual allocation"
                 icon={CalendarIcon}
               />
               <StatsCard
                 title="Used"
-                value={leaveBalance.used.toString()}
-                description="Days taken"
+                value={loadingLeaves ? '...' : leaveBalance.used.toString()}
+                description="Approved days taken"
                 icon={CheckSquare}
               />
               <StatsCard
                 title="Balance"
-                value={(leaveBalance.total - leaveBalance.used).toString()}
+                value={loadingLeaves ? '...' : (leaveBalance.total - leaveBalance.used).toString()}
                 description="Days remaining"
                 icon={Activity}
               />
               <StatsCard
                 title="Pending Requests"
-                value={leaveBalance.pending.toString()}
+                value={loadingLeaves ? '...' : leaveBalance.pending.toString()}
                 description="Awaiting approval"
                 icon={Clock}
               />
@@ -866,53 +900,98 @@ export default function EmployeeProfile() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Leave Requests</CardTitle>
-                  <Button onClick={() => setShowLeaveModal(true)}>
-                    <CalendarIcon className="w-4 h-4 mr-2" />
-                    Request Leave
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <CardTitle>Leave Requests</CardTitle>
+                    {loadingLeaves && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={fetchLeaveRequests} disabled={loadingLeaves}>
+                      Refresh
+                    </Button>
+                    <Button onClick={() => setShowLeaveModal(true)}>
+                      <CalendarIcon className="w-4 h-4 mr-2" />
+                      Request Leave
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Leave Type</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Days</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {leaveRequests.map((leave) => (
-                      <TableRow key={leave.id}>
-                        <TableCell className="font-medium">{leave.type}</TableCell>
-                        <TableCell>{leave.startDate}</TableCell>
-                        <TableCell>{leave.endDate}</TableCell>
-                        <TableCell>{leave.days}</TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(leave.status)}>
-                            {leave.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedLeave(leave);
-                              setShowViewLeaveModal(true);
-                            }}
-                          >
-                            View
-                          </Button>
-                        </TableCell>
+                {loadingLeaves ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="animate-spin text-gray-400 mb-3" size={28} />
+                    <p className="text-sm text-gray-500">Loading leave requests...</p>
+                  </div>
+                ) : leaveRequests.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <CalendarIcon className="h-10 w-10 text-gray-300 mb-3" />
+                    <p className="font-medium text-gray-700 mb-1">No Leave Requests</p>
+                    <p className="text-sm text-gray-500">You haven't applied for any leave yet. Click "Request Leave" to apply.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Leave Type</TableHead>
+                        <TableHead>Start Date</TableHead>
+                        <TableHead>End Date</TableHead>
+                        <TableHead>Days</TableHead>
+                        <TableHead>Reason</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {leaveRequests.map((leave) => (
+                        <TableRow key={leave.id}>
+                          <TableCell className="font-medium">{leave.leave_type}</TableCell>
+                          <TableCell>{new Date(leave.start_date).toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(leave.end_date).toLocaleDateString()}</TableCell>
+                          <TableCell>{leave.days}</TableCell>
+                          <TableCell>
+                            <span className="text-sm text-gray-600 truncate max-w-[150px] inline-block" title={leave.reason || ''}>
+                              {leave.reason || <span className="text-gray-400 italic">—</span>}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(leave.status)}>
+                              {formatLeaveStatus(leave.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedLeave(leave);
+                                  setShowViewLeaveModal(true);
+                                }}
+                              >
+                                View
+                              </Button>
+                              {leave.status === 'pending' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleCancelLeave(leave.id)}
+                                  disabled={cancellingLeaveId === leave.id}
+                                >
+                                  {cancellingLeaveId === leave.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                  ) : (
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                  )}
+                                  Cancel
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -981,15 +1060,15 @@ export default function EmployeeProfile() {
                 <>
                   <div>
                     <Label>Type</Label>
-                    <p className="font-medium">{selectedLeave.type}</p>
+                    <p className="font-medium">{selectedLeave.leave_type}</p>
                   </div>
                   <div>
                     <Label>Start Date</Label>
-                    <p className="font-medium">{selectedLeave.startDate}</p>
+                    <p className="font-medium">{new Date(selectedLeave.start_date).toLocaleDateString()}</p>
                   </div>
                   <div>
                     <Label>End Date</Label>
-                    <p className="font-medium">{selectedLeave.endDate}</p>
+                    <p className="font-medium">{new Date(selectedLeave.end_date).toLocaleDateString()}</p>
                   </div>
                   <div>
                     <Label>Days</Label>
@@ -997,7 +1076,7 @@ export default function EmployeeProfile() {
                   </div>
                   <div>
                     <Label>Status </Label>
-                    <Badge variant={getStatusBadgeVariant(selectedLeave.status)}>{selectedLeave.status}</Badge>
+                    <Badge variant={getStatusBadgeVariant(selectedLeave.status)}>{formatLeaveStatus(selectedLeave.status)}</Badge>
                   </div>
                   {selectedLeave.reason && (
                     <div>
@@ -1005,6 +1084,10 @@ export default function EmployeeProfile() {
                       <p className="whitespace-pre-wrap">{selectedLeave.reason}</p>
                     </div>
                   )}
+                  <div>
+                    <Label>Submitted</Label>
+                    <p className="text-sm text-muted-foreground">{new Date(selectedLeave.created_at).toLocaleString()}</p>
+                  </div>
                 </>
               ) : (
                 <p>No leave selected.</p>

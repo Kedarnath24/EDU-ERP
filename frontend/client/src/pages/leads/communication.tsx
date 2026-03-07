@@ -288,17 +288,6 @@ export default function LeadCommunication() {
           </div>
         </div>
 
-        {/* Enhanced Features Banner */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 rounded-lg shadow-lg mb-6">
-          <div className="flex items-center gap-3">
-            <Sparkles className="w-6 h-6" />
-            <div>
-              <h3 className="font-bold text-lg">✨ Enhanced Communication System</h3>
-              <p className="text-sm text-purple-100">Quick actions for WhatsApp, Email, and Phone calls with full activity tracking</p>
-            </div>
-          </div>
-        </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="border-2 border-green-200">

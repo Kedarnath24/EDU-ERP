@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    EDU-ERP Careers Landing Page — Stylesheet
-   Premium dark-to-light design with purple accents
+   Premium dark-to-light design with emerald accents
    ═══════════════════════════════════════════════════════ */
 
 /* ── Reset & Variables ── */
@@ -20,16 +20,16 @@
     --bg-card: #ffffff;
     --bg-card-hover: #faf9ff;
 
-    /* Purple accent spectrum */
-    --purple-50: #f5f3ff;
-    --purple-100: #ede9fe;
-    --purple-200: #ddd6fe;
-    --purple-300: #c4b5fd;
-    --purple-400: #a78bfa;
-    --purple-500: #8b5cf6;
-    --purple-600: #7c3aed;
-    --purple-700: #6d28d9;
-    --purple-800: #5b21b6;
+    /* Emerald/Teal accent spectrum */
+    --purple-50: #ecfdf5;
+    --purple-100: #d1fae5;
+    --purple-200: #a7f3d0;
+    --purple-300: #6ee7b7;
+    --purple-400: #34d399;
+    --purple-500: #10b981;
+    --purple-600: #059669;
+    --purple-700: #047857;
+    --purple-800: #065f46;
 
     /* Neutrals */
     --slate-50: #f8fafc;
@@ -44,7 +44,7 @@
     --slate-900: #0f172a;
 
     /* Accents */
-    --blue-500: #3b82f6;
+    --blue-500: #0891b2;
     --green-500: #10b981;
     --orange-500: #f59e0b;
     --red-500: #ef4444;
@@ -54,7 +54,7 @@
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, .06), 0 2px 4px -2px rgba(0, 0, 0, .06);
     --shadow-lg: 0 10px 30px -5px rgba(0, 0, 0, .08), 0 4px 12px -2px rgba(0, 0, 0, .04);
     --shadow-xl: 0 20px 50px -10px rgba(0, 0, 0, .12);
-    --shadow-glow: 0 0 40px rgba(139, 92, 246, .15);
+    --shadow-glow: 0 0 40px rgba(16, 185, 129, .15);
 
     /* Spacing / Layout */
     --container: 1200px;
@@ -113,7 +113,7 @@ img {
     background: rgba(12, 10, 29, .92);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(139, 92, 246, .12);
+    border-bottom: 1px solid rgba(16, 185, 129, .12);
     box-shadow: 0 4px 30px rgba(0, 0, 0, .2);
 }
 
@@ -202,8 +202,8 @@ img {
     position: absolute;
     inset: 0;
     background-image:
-        radial-gradient(circle at 20% 50%, rgba(139, 92, 246, .08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(59, 130, 246, .06) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(16, 185, 129, .08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(8, 145, 178, .06) 0%, transparent 50%);
     background-size: 100% 100%;
 }
 
@@ -256,8 +256,8 @@ img {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(139, 92, 246, .12);
-    border: 1px solid rgba(139, 92, 246, .25);
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .25);
     color: var(--purple-300);
     padding: 8px 20px;
     border-radius: 100px;
@@ -364,12 +364,12 @@ img {
     font-size: .95rem;
     letter-spacing: -.01em;
     transition: all .3s var(--ease);
-    box-shadow: 0 4px 20px rgba(139, 92, 246, .35);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, .35);
 }
 
 .hero-cta:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(139, 92, 246, .5);
+    box-shadow: 0 8px 30px rgba(16, 185, 129, .5);
     background: linear-gradient(135deg, var(--purple-500), var(--purple-400));
 }
 
@@ -481,7 +481,7 @@ img {
 .search-box input:focus {
     border-color: var(--purple-400);
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, .1);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, .1);
 }
 
 .filter-group {
@@ -508,7 +508,7 @@ img {
 .filter-select:focus {
     border-color: var(--purple-400);
     background-color: #fff;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, .1);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, .1);
 }
 
 .results-meta {
@@ -1028,12 +1028,12 @@ img {
 }
 
 .perk-icon-blue {
-    background: rgba(59, 130, 246, .1);
+    background: rgba(8, 145, 178, .1);
     color: var(--blue-500);
 }
 
 .perk-icon-purple {
-    background: rgba(139, 92, 246, .1);
+    background: rgba(16, 185, 129, .1);
     color: var(--purple-500);
 }
 
@@ -1429,7 +1429,7 @@ img {
 .apply-form-field input:focus {
     border-color: var(--purple-400);
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, .1);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, .1);
 }
 
 .modal-apply-btn {
@@ -1445,14 +1445,14 @@ img {
     font-size: .95rem;
     cursor: pointer;
     transition: all .3s var(--ease);
-    box-shadow: 0 4px 20px rgba(139, 92, 246, .3);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, .3);
     font-family: inherit;
     margin-top: 8px;
 }
 
 .modal-apply-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(139, 92, 246, .45);
+    box-shadow: 0 8px 30px rgba(16, 185, 129, .45);
 }
 
 .modal-apply-btn:disabled {

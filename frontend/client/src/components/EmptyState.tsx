@@ -40,7 +40,7 @@ export default function EmptyState({
           damping: 20,
           delay: 0.1,
         }}
-        className="mb-6 p-6 md:p-8 bg-gradient-to-br from-brand-50 to-purple-50 dark:from-brand-900/20 dark:to-purple-900/20 rounded-full shadow-lg"
+        className="mb-6 p-6 md:p-8 bg-gradient-to-br from-brand-50 to-teal-50 dark:from-brand-900/20 dark:to-teal-900/20 rounded-full shadow-lg"
       >
         <motion.div
           animate={{

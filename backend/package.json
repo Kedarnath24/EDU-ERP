@@ -1,7 +1,7 @@
 {
-  "name": "z-erp-backend",
+  "name": "edu-erp-backend",
   "version": "1.0.0",
-  "description": "Z-ERP Backend API",
+  "description": "EDU-ERP Backend API",
   "main": "src/index.js",
   "license": "ISC",
   "scripts": {

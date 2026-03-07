@@ -37,7 +37,7 @@ import {
 import { 
   User, Users, UserCheck, UserPlus, Building2, Phone, 
   Mail, Calendar, ArrowRight, Search, Filter, Download,
-  History, Sparkles, CheckCircle, XCircle, Clock,
+  History, CheckCircle, XCircle, Clock,
   MoreVertical, Edit, Eye, RefreshCw, Loader2,
   TrendingUp, Award, Target, AlertCircle, Save
 } from "lucide-react";
@@ -517,19 +517,6 @@ export default function LeadAssign() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">CRM - Assign Lead</h1>
               <p className="text-sm text-gray-600">Assign leads to sales executives and track assignments</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Enhancement Banner */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-blue-900 mb-1">Smart Lead Assignment System</h3>
-              <p className="text-sm text-blue-700">
-                👥 Team workload tracking • 📊 Performance metrics • 🎯 Bulk assignment • 🔄 Easy reassignment • 📝 Assignment history
-              </p>
             </div>
           </div>
         </div>

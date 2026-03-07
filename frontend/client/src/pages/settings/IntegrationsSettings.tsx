@@ -79,7 +79,7 @@ const integrationList: Integration[] = [
   {
     id: "zapier",
     name: "Zapier",
-    description: "Automate workflows by connecting Z-ERP to 5,000+ apps.",
+    description: "Automate workflows by connecting EDU-ERP to 5,000+ apps.",
     category: "Automation",
     icon: Zap,
     iconColor: "text-amber-600 bg-amber-100",
@@ -268,7 +268,7 @@ const IntegrationsSettings = () => {
             {loading && <RefreshCw size={18} className="animate-spin text-slate-400" />}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Connect Z-ERP with your favorite tools to automate workflows and sync data.
+            Connect EDU-ERP with your favorite tools to automate workflows and sync data.
           </p>
         </div>
 

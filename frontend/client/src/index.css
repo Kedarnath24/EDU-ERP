@@ -43,18 +43,18 @@
 
 /* LIGHT MODE */
 :root {
-  /* Dynamic brand color - defaults to indigo-500 */
-  --brand-color: #6366f1;
-  --brand-50: #eef2ff;
-  --brand-100: #e0e7ff;
-  --brand-200: #c7d2fe;
-  --brand-300: #a5b4fc;
-  --brand-400: #818cf8;
-  --brand-500: #6366f1;
-  --brand-600: #4f46e5;
-  --brand-700: #4338ca;
-  --brand-800: #3730a3;
-  --brand-900: #312e81;
+  /* Dynamic brand color - defaults to emerald-500 */
+  --brand-color: #10b981;
+  --brand-50: #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+  --brand-900: #064e3b;
   
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);

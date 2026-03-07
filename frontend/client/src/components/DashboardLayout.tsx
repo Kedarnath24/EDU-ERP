@@ -106,6 +106,11 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   // Main navigation items (memoized)
   const navigation: NavItem[] = useMemo(() => [
     {
+      name: 'Dashboard',
+      icon: LayoutDashboard,
+      path: '/dashboard',
+    },
+    {
       name: 'CRM',
       icon: Users,
       path: '/leads',
@@ -132,7 +137,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         { name: 'Payroll', path: '/hrm/payroll' },
         { name: 'Insurance', path: '/hrm/insurance' },
         { name: 'Assets', path: '/hrm/assets' },
-        { name: 'Performance', path: '/hrm/performance' },  
+        { name: 'Performance', path: '/hrm/performance' },
         { name: 'Automation', path: '/hrm/automation' },
         { name: 'Workflows', path: '/hrm/workflows' },
       ]
@@ -280,7 +285,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
 
   // Search data - all searchable pages (memoized outside component for better performance)
   const allSearchPages = useMemo(() => [
-    { name: 'Dashboard', path: '/', category: 'Dashboard', keywords: 'home overview analytics' },
+    { name: 'Dashboard', path: '/dashboard', category: 'Dashboard', keywords: 'home overview analytics summary stats leads employees leave' },
     { name: 'Projects', path: '/projects', category: 'Projects', keywords: 'project management tasks' },
     { name: 'HRM Dashboard', path: '/hrm', category: 'HR', keywords: 'human resources employees' },
     { name: 'Employees', path: '/hrm/employees', category: 'HR', keywords: 'staff team members' },
@@ -994,9 +999,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       </Dialog>
 
       {/* Attendance Tracker - Enhanced Check-in/Check-out System */}
-      <AttendanceTracker 
-        open={checkInDialogOpen} 
-        onOpenChange={setCheckInDialogOpen} 
+      <AttendanceTracker
+        open={checkInDialogOpen}
+        onOpenChange={setCheckInDialogOpen}
       />
 
       {/* Add Task Dialog */}

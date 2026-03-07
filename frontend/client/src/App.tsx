@@ -6,6 +6,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 
+// Dashboard Module
+import Dashboard from "@/pages/dashboard/Dashboard";
+
 // HRM Module Pages
 import HRMDashboard from "@/pages/hrm/hrm-dashboard";
 import HRMEmployees from "@/pages/hrm/hrm-employees";
@@ -34,6 +37,7 @@ import DataBackupSettings from "@/pages/settings/DataBackupSettings";
 import EmailTemplatesSettings from "@/pages/settings/EmailTemplatesSettings";
 import ApiKeysSettings from "@/pages/settings/ApiKeysSettings";
 import IntegrationsSettings from "@/pages/settings/IntegrationsSettings";
+import WahaIntegration from "@/pages/settings/WahaIntegration";
 import SecuritySettings from "@/pages/settings/SecuritySettings";
 import TeamPermissionsSettings from "@/pages/settings/TeamPermissionsSettings";
 import OrganizationSettings from "@/pages/settings/OrganizationSettings";
@@ -91,9 +95,9 @@ function AppRouter() {
       <Route path="/login" component={Login} />
       <Route path="/forgot-password" component={ForgotPassword} />
 
-      {/* Default root → redirect to leads */}
+      {/* Default root → Dashboard */}
       <Route path="/">
-        {!session ? <Login /> : <LeadsWorkflow />}
+        {!session ? <Login /> : <Dashboard />}
       </Route>
 
       {/* HRM Module Routes */}
@@ -127,6 +131,7 @@ function AppRouter() {
       <Route path="/settings/data" component={DataBackupSettings} />
       <Route path="/settings/email-templates" component={EmailTemplatesSettings} />
       <Route path="/settings/api-keys" component={ApiKeysSettings} />
+      <Route path="/settings/integrations/waha" component={WahaIntegration} />
       <Route path="/settings/integrations" component={IntegrationsSettings} />
       <Route path="/settings/*" component={SettingsDashboard} />
       <Route path="/settings" component={SettingsDashboard} />
@@ -147,8 +152,11 @@ function AppRouter() {
       <Route path="/leads/*" component={LeadsWorkflow} />
       <Route path="/leads" component={LeadsWorkflow} />
 
+      {/* Dashboard Module */}
+      <Route path="/dashboard" component={Dashboard} />
+
       {/* Fallback */}
-      <Route component={LeadsWorkflow} />
+      <Route component={Dashboard} />
     </Switch>
   );
 }

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -19,10 +19,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Briefcase, 
-  Users, 
-  Calendar, 
+import {
+  Briefcase,
+  Users,
+  Calendar,
   CheckCircle,
   FileText,
   CalendarClock,
@@ -32,15 +32,16 @@ import {
   BarChart3,
   TrendingUp,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   Cell
 } from 'recharts';
@@ -50,9 +51,19 @@ import JobDescriptionsModule from './job-descriptions';
 import InterviewScheduleModule from './interview-schedule';
 import CandidatesModule from './candidates';
 
+// API callbacks
+import {
+  getJobPostings,
+  createJobPosting,
+  deleteJobPosting,
+  getRecruitmentStats,
+  type JobPosting,
+  type RecruitmentStats,
+} from '@/lib/api';
+
 // ─── Shared Types ──────────────────────────────────
 export interface Job {
-  id: number;
+  id: string;
   title: string;
   department: string;
   location: string;
@@ -84,61 +95,6 @@ const TYPE_MAP: Record<string, string> = {
   full: 'Full-time', part: 'Part-time', contract: 'Contract', intern: 'Internship',
 };
 
-const INITIAL_JOBS: Job[] = [
-  {
-    id: 1, title: 'Senior Full Stack Developer', department: 'Engineering',
-    location: 'Remote', type: 'Full-time', workMode: 'Remote',
-    salaryMin: '120,000', salaryMax: '180,000',
-    description: 'Build and maintain scalable web applications using modern technologies.',
-    skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'AWS'],
-    duration: 'Permanent', experience: 'Senior (5+ yrs)', openings: 2,
-    deadline: '2026-03-15',
-    responsibilities: 'Lead technical architecture decisions\nMentor junior developers\nConduct code reviews',
-    requirements: '5+ years full-stack experience\nProficiency in React & Node.js\nCloud services experience',
-    benefits: 'Health & dental insurance\nFlexible PTO\nRemote work\n401k matching',
-    education: "Bachelor's Degree", applicants: 45, status: 'Active', postedDate: '2 days ago',
-  },
-  {
-    id: 2, title: 'Product Marketing Manager', department: 'Marketing',
-    location: 'New York, NY', type: 'Full-time', workMode: 'Hybrid',
-    salaryMin: '90,000', salaryMax: '130,000',
-    description: 'Drive product marketing strategy and go-to-market plans for SaaS products.',
-    skills: ['Content Strategy', 'SEO', 'Analytics', 'Campaign Management'],
-    duration: 'Permanent', experience: 'Mid (3-5 yrs)', openings: 1,
-    deadline: '2026-03-01',
-    responsibilities: 'Develop go-to-market strategies\nCreate marketing collateral\nAnalyze campaign performance',
-    requirements: '3+ years in product marketing\nB2B SaaS experience\nStrong analytical skills',
-    benefits: 'Health insurance\nAnnual bonus\nProfessional development budget',
-    education: "Bachelor's Degree", applicants: 28, status: 'Active', postedDate: '5 days ago',
-  },
-  {
-    id: 3, title: 'UI/UX Designer', department: 'Product',
-    location: 'Remote', type: 'Contract', workMode: 'Remote',
-    salaryMin: '60/hr', salaryMax: '85/hr',
-    description: 'Design intuitive user interfaces and conduct user research.',
-    skills: ['Figma', 'User Research', 'Prototyping', 'Design Systems', 'Accessibility'],
-    duration: '6 months', experience: 'Mid (3-5 yrs)', openings: 1,
-    deadline: '2026-02-28',
-    responsibilities: 'Create wireframes and prototypes\nConduct user research\nMaintain design system',
-    requirements: '3+ years UX design experience\nProficiency in Figma\nPortfolio required',
-    benefits: 'Flexible hours\nRemote work\nEquipment stipend',
-    education: "Bachelor's Degree", applicants: 56, status: 'Closing Soon', postedDate: '1 week ago',
-  },
-  {
-    id: 4, title: 'Sales Representative', department: 'Sales',
-    location: 'Chicago, IL', type: 'Full-time', workMode: 'On-site',
-    salaryMin: '55,000', salaryMax: '75,000',
-    description: 'Drive new business development and manage client relationships.',
-    skills: ['CRM', 'Negotiation', 'Cold Calling', 'Pipeline Management'],
-    duration: 'Permanent', experience: 'Entry (0-2 yrs)', openings: 3,
-    deadline: '2026-03-20',
-    responsibilities: 'Prospect and qualify leads\nConduct product demos\nMeet quarterly sales targets',
-    requirements: '1+ years sales experience preferred\nExcellent communication skills\nSelf-motivated',
-    benefits: 'Base + Commission\nHealth insurance\nSales training program',
-    education: 'High School Diploma', applicants: 12, status: 'Active', postedDate: '1 day ago',
-  },
-];
-
 interface JobFormData {
   title: string;
   department: string;
@@ -167,32 +123,58 @@ const emptyForm: JobFormData = {
   requirements: '', benefits: '',
 };
 
-const PIPELINE_DATA = [
-  { name: 'Applied', value: 145, color: '#94a3b8' },
-  { name: 'Screening', value: 45, color: '#f59e0b' },
-  { name: 'Interview', value: 28, color: '#8b5cf6' },
-  { name: 'Technical', value: 12, color: '#3b82f6' },
-  { name: 'Offer', value: 5, color: '#10b981' },
-];
-
-const RECENT_ACTIVITY = [
-  { id: 1, user: 'Sarah Jenkins', action: 'applied for', target: 'Senior Developer', time: '2h ago', icon: <FileText className="h-4 w-4" /> },
-  { id: 2, user: 'Interview scheduled', action: 'with', target: 'Michael Chen', time: '4h ago', icon: <CalendarClock className="h-4 w-4" /> },
-  { id: 3, user: 'Offer accepted', action: 'by', target: 'Emily Davis', time: 'Yesterday', icon: <CheckCircle className="h-4 w-4" /> },
-];
-
 export default function RecruitmentDashboard() {
   // Shared state
-  const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [activeTab, setActiveTab] = useState('jobs');
   const [selectedJobFilter, setSelectedJobFilter] = useState<string | null>(null);
   const [schedulingFor, setSchedulingFor] = useState<{ candidate: string; position: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Stats state
+  const [stats, setStats] = useState({
+    activeJobs: 0,
+    totalCandidates: 0,
+    hired: 0,
+    interviewing: 0,
+  });
+  const [pipelineData, setPipelineData] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [recentActivity, setRecentActivity] = useState<Array<{ id: string; user: string; action: string; target: string; time: string }>>([]);
 
   // Form state
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
   const [form, setForm] = useState<JobFormData>(emptyForm);
   const [skillInput, setSkillInput] = useState('');
+  const [publishing, setPublishing] = useState(false);
   const { toast } = useToast();
+
+  // ─── Fetch data from backend ───
+  const fetchJobs = useCallback(async () => {
+    const { data, error } = await getJobPostings();
+    if (error) {
+      toast({ title: 'Error', description: error, variant: 'destructive' });
+      return;
+    }
+    if (data) setJobs(data as Job[]);
+  }, [toast]);
+
+  const fetchStats = useCallback(async () => {
+    const { data, error } = await getRecruitmentStats();
+    if (!error && data) {
+      setStats(data.stats);
+      setPipelineData(data.pipeline);
+      setRecentActivity(data.recentActivity);
+    }
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      await Promise.all([fetchJobs(), fetchStats()]);
+      setLoading(false);
+    };
+    load();
+  }, [fetchJobs, fetchStats]);
 
   const updateForm = (field: keyof JobFormData, value: string | string[]) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -217,7 +199,7 @@ export default function RecruitmentDashboard() {
     }
   };
 
-  const publishJob = () => {
+  const publishJob = async () => {
     if (!form.title.trim()) {
       toast({ title: 'Missing required field', description: 'Please provide a job title.' });
       return;
@@ -231,12 +213,12 @@ export default function RecruitmentDashboard() {
       return;
     }
 
-    const newJob: Job = {
-      id: Date.now(),
+    setPublishing(true);
+    const { data, error } = await createJobPosting({
       title: form.title,
       department: DEPT_MAP[form.department] || form.department,
+      employmentType: TYPE_MAP[form.employmentType] || form.employmentType,
       location: form.location || 'Not specified',
-      type: TYPE_MAP[form.employmentType] || form.employmentType,
       workMode: form.workMode || 'Not specified',
       salaryMin: form.salaryMin,
       salaryMax: form.salaryMax,
@@ -244,23 +226,41 @@ export default function RecruitmentDashboard() {
       skills: form.skills,
       duration: form.duration || 'Permanent',
       experience: form.experience || 'Not specified',
-      openings: parseInt(form.openings) || 1,
+      openings: form.openings,
       deadline: form.deadline,
       responsibilities: form.responsibilities,
       requirements: form.requirements,
       benefits: form.benefits,
       education: form.education || 'Not specified',
-      applicants: 0,
-      status: 'Active',
-      postedDate: 'Just now',
-    };
+    });
+    setPublishing(false);
 
-    setJobs(prev => [newJob, ...prev]);
-    setIsPostJobOpen(false);
-    setForm(emptyForm);
-    setSkillInput('');
-    setActiveTab('jobs');
-    toast({ title: 'Job posted successfully!', description: `"${form.title}" has been published and is now live.` });
+    if (error) {
+      toast({ title: 'Error', description: error, variant: 'destructive' });
+      return;
+    }
+
+    if (data) {
+      setJobs(prev => [data as Job, ...prev]);
+      setIsPostJobOpen(false);
+      setForm(emptyForm);
+      setSkillInput('');
+      setActiveTab('jobs');
+      toast({ title: 'Job posted successfully!', description: `"${form.title}" has been published and is now live.` });
+      // Refresh stats
+      fetchStats();
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    const { error } = await deleteJobPosting(jobId);
+    if (error) {
+      toast({ title: 'Error', description: error, variant: 'destructive' });
+      return;
+    }
+    setJobs(prev => prev.filter(j => j.id !== jobId));
+    toast({ title: 'Job deleted', description: 'The position has been removed.' });
+    fetchStats();
   };
 
   const handleViewApplicants = (jobTitle: string) => {
@@ -499,7 +499,10 @@ export default function RecruitmentDashboard() {
                 </ScrollArea>
                 <DialogFooter className="pt-4 border-t">
                   <Button variant="outline" onClick={() => { setIsPostJobOpen(false); setForm(emptyForm); setSkillInput(''); }}>Cancel</Button>
-                  <Button onClick={publishJob} className="bg-purple-600 hover:bg-purple-700 text-white">Publish Position</Button>
+                  <Button onClick={publishJob} disabled={publishing} className="bg-purple-600 hover:bg-purple-700 text-white">
+                    {publishing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Publish Position
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -515,15 +518,15 @@ export default function RecruitmentDashboard() {
               </div>
               <div>
                 <p className="text-sm text-slate-500 font-medium whitespace-nowrap">Active Jobs</p>
-                <h3 className="text-2xl font-bold">{jobs.filter(j => j.status === 'Active').length}</h3>
+                <h3 className="text-2xl font-bold">{loading ? '...' : stats.activeJobs}</h3>
               </div>
               <div className="ml-auto flex items-center text-xs text-green-600 font-medium">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                +2
+                Live
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-white border-slate-100 shadow-sm">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="h-12 w-12 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
@@ -531,11 +534,7 @@ export default function RecruitmentDashboard() {
               </div>
               <div>
                 <p className="text-sm text-slate-500 font-medium">Total Candidates</p>
-                <h3 className="text-2xl font-bold">248</h3>
-              </div>
-              <div className="ml-auto flex items-center text-xs text-green-600 font-medium">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +18
+                <h3 className="text-2xl font-bold">{loading ? '...' : stats.totalCandidates}</h3>
               </div>
             </CardContent>
           </Card>
@@ -546,11 +545,8 @@ export default function RecruitmentDashboard() {
                 <Calendar className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm text-slate-500 font-medium">Interviews</p>
-                <h3 className="text-2xl font-bold">15</h3>
-              </div>
-              <div className="ml-auto flex items-center text-xs text-slate-500">
-                Today
+                <p className="text-sm text-slate-500 font-medium">Interviewing</p>
+                <h3 className="text-2xl font-bold">{loading ? '...' : stats.interviewing}</h3>
               </div>
             </CardContent>
           </Card>
@@ -562,10 +558,7 @@ export default function RecruitmentDashboard() {
               </div>
               <div>
                 <p className="text-sm text-slate-500 font-medium">Hired</p>
-                <h3 className="text-2xl font-bold">34</h3>
-              </div>
-              <div className="ml-auto flex items-center text-xs text-slate-400">
-                This Year
+                <h3 className="text-2xl font-bold">{loading ? '...' : stats.hired}</h3>
               </div>
             </CardContent>
           </Card>
@@ -583,32 +576,38 @@ export default function RecruitmentDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={PIPELINE_DATA} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#64748b', fontSize: 12 }}
-                      dy={10}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#64748b', fontSize: 12 }}
-                    />
-                    <Tooltip 
-                      cursor={{ fill: '#f8fafc' }}
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
-                      {PIPELINE_DATA.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {pipelineData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={pipelineData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#64748b', fontSize: 12 }}
+                        dy={10}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#64748b', fontSize: 12 }}
+                      />
+                      <Tooltip
+                        cursor={{ fill: '#f8fafc' }}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
+                        {pipelineData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-400">
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'No pipeline data yet'}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -623,10 +622,10 @@ export default function RecruitmentDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {RECENT_ACTIVITY.map((activity) => (
+                {recentActivity.length > 0 ? recentActivity.map((activity) => (
                   <div key={activity.id} className="flex gap-4">
                     <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-                      {activity.icon}
+                      <FileText className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">
@@ -635,9 +634,13 @@ export default function RecruitmentDashboard() {
                       <p className="text-xs text-slate-500 mt-1">{activity.time}</p>
                     </div>
                   </div>
-                ))}
-                <Button 
-                  variant="ghost" 
+                )) : (
+                  <div className="text-center py-8 text-slate-400 text-sm">
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : 'No recent activity'}
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
                   className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-xs gap-2"
                   onClick={() => setActiveTab('candidates')}
                 >
@@ -664,7 +667,7 @@ export default function RecruitmentDashboard() {
           </TabsList>
 
           <TabsContent value="jobs" className="mt-0">
-            <JobDescriptionsModule jobs={jobs} onViewApplicants={handleViewApplicants} />
+            <JobDescriptionsModule jobs={jobs} onViewApplicants={handleViewApplicants} onDeleteJob={handleDeleteJob} />
           </TabsContent>
 
           <TabsContent value="candidates" className="mt-0">
@@ -673,6 +676,7 @@ export default function RecruitmentDashboard() {
               onScheduleInterview={handleScheduleInterview}
               onClearFilter={handleClearJobFilter}
               jobs={jobs}
+              onRefreshStats={fetchStats}
             />
           </TabsContent>
 

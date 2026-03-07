@@ -15,6 +15,8 @@ import {
   Webhook,
   RefreshCw,
   X,
+  Phone,
+  ArrowRight,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -122,6 +124,20 @@ const integrationList: Integration[] = [
       { key: "secret", label: "Signing Secret", type: "password", placeholder: "whsec_••••••••" },
     ],
   },
+  {
+    id: "waha",
+    name: "WAHA API (WhatsApp)",
+    description: "Send & receive WhatsApp messages via WAHA HTTP API.",
+    category: "Messaging",
+    icon: Phone,
+    iconColor: "text-green-600 bg-green-100",
+    connected: false,
+    configFields: [
+      { key: "base_url", label: "WAHA API Base URL", placeholder: "https://waha.yourserver.com" },
+      { key: "api_key", label: "API Key", type: "password", placeholder: "your-api-key" },
+      { key: "session_name", label: "Session Name", placeholder: "default" },
+    ],
+  },
 ];
 
 const categoryColors: Record<string, string> = {
@@ -131,6 +147,7 @@ const categoryColors: Record<string, string> = {
   Analytics: "bg-blue-100 text-blue-700",
   Storage: "bg-orange-100 text-orange-700",
   Developer: "bg-slate-100 text-slate-700",
+  Messaging: "bg-green-100 text-green-700",
 };
 
 const IntegrationsSettings = () => {
@@ -275,14 +292,26 @@ const IntegrationsSettings = () => {
                       </div>
                       <p className="text-xs text-slate-500 truncate">{i.description}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 gap-1.5 text-xs"
-                      onClick={() => i.configFields ? openConfigure(i) : toggleConnect(i.id)}
-                    >
-                      <Plug size={12} /> Connect
-                    </Button>
+                    {i.id === "waha" ? (
+                      <Link href="/settings/integrations/waha">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 gap-1.5 text-xs border-green-300 text-green-700 hover:bg-green-50"
+                        >
+                          <ArrowRight size={12} /> Configure
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 gap-1.5 text-xs"
+                        onClick={() => i.configFields ? openConfigure(i) : toggleConnect(i.id)}
+                      >
+                        <Plug size={12} /> Connect
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );

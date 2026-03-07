@@ -1,104 +1,14 @@
 /* ═══════════════════════════════════════════════════════
    EDU-ERP Careers Landing Page — JavaScript
-   Mirrors the Job data from recruitment-dashboard.tsx
-   Handles rendering, filtering, search, modals, animations
+   Fetches real job data from the backend API.
+   Handles rendering, filtering, search, modals, applications.
    ═══════════════════════════════════════════════════════ */
 
-// ─── Job Data (mirrors INITIAL_JOBS from recruitment-dashboard) ───
-const JOBS = [
-    {
-        id: 1,
-        title: 'Senior Full Stack Developer',
-        department: 'Engineering',
-        location: 'Remote',
-        type: 'Full-time',
-        workMode: 'Remote',
-        salaryMin: '120,000',
-        salaryMax: '180,000',
-        description: 'Build and maintain scalable web applications using modern technologies. Work with cutting-edge tools and collaborate with top-tier engineers.',
-        skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'AWS'],
-        duration: 'Permanent',
-        experience: 'Senior (5+ yrs)',
-        openings: 2,
-        deadline: '2026-03-15',
-        responsibilities: 'Lead technical architecture decisions\nMentor junior developers\nConduct code reviews\nDesign and implement new features\nOptimize application performance',
-        requirements: '5+ years full-stack experience\nProficiency in React & Node.js\nCloud services experience\nStrong problem-solving skills',
-        benefits: 'Health & dental insurance\nFlexible PTO\nRemote work\n401k matching\nEquipment stipend',
-        education: "Bachelor's Degree",
-        applicants: 45,
-        status: 'Active',
-        postedDate: '2 days ago',
-    },
-    {
-        id: 2,
-        title: 'Product Marketing Manager',
-        department: 'Marketing',
-        location: 'New York, NY',
-        type: 'Full-time',
-        workMode: 'Hybrid',
-        salaryMin: '90,000',
-        salaryMax: '130,000',
-        description: 'Drive product marketing strategy and go-to-market plans for our SaaS products. Shape how the world sees our brand.',
-        skills: ['Content Strategy', 'SEO', 'Analytics', 'Campaign Management'],
-        duration: 'Permanent',
-        experience: 'Mid (3-5 yrs)',
-        openings: 1,
-        deadline: '2026-03-01',
-        responsibilities: 'Develop go-to-market strategies\nCreate marketing collateral\nAnalyze campaign performance\nCollaborate with sales teams',
-        requirements: '3+ years in product marketing\nB2B SaaS experience\nStrong analytical skills\nExcellent written communication',
-        benefits: 'Health insurance\nAnnual bonus\nProfessional development budget\nHybrid work model',
-        education: "Bachelor's Degree",
-        applicants: 28,
-        status: 'Active',
-        postedDate: '5 days ago',
-    },
-    {
-        id: 3,
-        title: 'UI/UX Designer',
-        department: 'Product',
-        location: 'Remote',
-        type: 'Contract',
-        workMode: 'Remote',
-        salaryMin: '60/hr',
-        salaryMax: '85/hr',
-        description: 'Design intuitive user interfaces and conduct user research to create delightful experiences for millions of users.',
-        skills: ['Figma', 'User Research', 'Prototyping', 'Design Systems', 'Accessibility'],
-        duration: '6 months',
-        experience: 'Mid (3-5 yrs)',
-        openings: 1,
-        deadline: '2026-02-28',
-        responsibilities: 'Create wireframes and prototypes\nConduct user research\nMaintain design system\nCollaborate with engineering',
-        requirements: '3+ years UX design experience\nProficiency in Figma\nPortfolio required\nAccessibility knowledge',
-        benefits: 'Flexible hours\nRemote work\nEquipment stipend',
-        education: "Bachelor's Degree",
-        applicants: 56,
-        status: 'Closing Soon',
-        postedDate: '1 week ago',
-    },
-    {
-        id: 4,
-        title: 'Sales Representative',
-        department: 'Sales',
-        location: 'Chicago, IL',
-        type: 'Full-time',
-        workMode: 'On-site',
-        salaryMin: '55,000',
-        salaryMax: '75,000',
-        description: 'Drive new business development and manage client relationships. Be the face of EDU-ERP to prospective customers.',
-        skills: ['CRM', 'Negotiation', 'Cold Calling', 'Pipeline Management'],
-        duration: 'Permanent',
-        experience: 'Entry (0-2 yrs)',
-        openings: 3,
-        deadline: '2026-03-20',
-        responsibilities: 'Prospect and qualify leads\nConduct product demos\nMeet quarterly sales targets\nBuild client relationships',
-        requirements: '1+ years sales experience preferred\nExcellent communication skills\nSelf-motivated\nGoal-oriented mindset',
-        benefits: 'Base + Commission\nHealth insurance\nSales training program\nCareer growth path',
-        education: 'High School Diploma',
-        applicants: 12,
-        status: 'Active',
-        postedDate: '1 day ago',
-    },
-];
+// ─── Configuration ───
+const API_BASE_URL = 'http://localhost:5001';
+
+// ─── State ───
+let JOBS = [];
 
 // ─── DOM References ───
 const jobsGrid = document.getElementById('jobs-grid');
@@ -114,11 +24,35 @@ const modalBody = document.getElementById('modal-body');
 const modalClose = document.getElementById('modal-close');
 const navbar = document.getElementById('navbar');
 
+// ─── Fetch Jobs from Backend ───
+async function fetchJobs() {
+    try {
+        resultsCount.textContent = 'Loading positions...';
+        const res = await fetch(`${API_BASE_URL}/api/recruitment/jobs/public`);
+        if (!res.ok) throw new Error('Failed to fetch jobs');
+        const data = await res.json();
+        JOBS = data.jobs || [];
+        populateFilters();
+        renderJobs(JOBS);
+        initHeroStats();
+    } catch (err) {
+        console.error('Error fetching jobs:', err);
+        resultsCount.textContent = 'Unable to load positions. Please try again later.';
+        JOBS = [];
+        renderJobs([]);
+    }
+}
+
 // ─── Populate Filter Dropdowns ───
 function populateFilters() {
     const departments = [...new Set(JOBS.map(j => j.department))].sort();
     const types = [...new Set(JOBS.map(j => j.type))].sort();
     const modes = [...new Set(JOBS.map(j => j.workMode))].sort();
+
+    // Clear existing options (except first "All" option)
+    [filterDept, filterType, filterMode].forEach(sel => {
+        while (sel.options.length > 1) sel.remove(1);
+    });
 
     departments.forEach(d => {
         const opt = document.createElement('option');
@@ -151,6 +85,8 @@ const ICONS = {
     mode: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`,
     users: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
     arrow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>`,
+    check: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+    loader: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><circle cx="12" cy="12" r="10" opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" opacity="1"></path></svg>`,
 };
 
 // ─── Helpers ───
@@ -200,7 +136,7 @@ function renderJobs(jobs) {
         <span class="meta-tag">${ICONS.mode} ${job.workMode}</span>
         ${job.openings > 1 ? `<span class="meta-tag">${ICONS.users} ${job.openings} openings</span>` : ''}
       </div>
-      <p class="job-card-desc">${job.description}</p>
+      <p class="job-card-desc">${job.description || ''}</p>
       <div class="job-card-skills">${skillsHtml}${extraSkills}</div>
       <div class="job-card-footer">
         <span class="job-salary">${formatSalary(job.salaryMin, job.salaryMax)} <span>/ yr</span></span>
@@ -315,7 +251,7 @@ function openModal(job) {
 
     <div class="modal-section">
       <h3 class="modal-section-title">About This Role</h3>
-      <p>${job.description}</p>
+      <p>${job.description || 'No description provided.'}</p>
     </div>
 
     ${responsibilitiesList ? `
@@ -342,13 +278,105 @@ function openModal(job) {
       <ul>${benefitsList}</ul>
     </div>` : ''}
 
-    <button class="modal-apply-btn" onclick="alert('Application submitted! We\\'ll be in touch soon.')">
-      Apply Now ${ICONS.arrow}
-    </button>
+    <!-- ═══════════ Application Form ═══════════ -->
+    <div class="apply-form-section">
+      <h3 class="modal-section-title">Apply for this Position</h3>
+      <form id="apply-form" class="apply-form" onsubmit="return false;">
+        <div class="apply-form-grid">
+          <div class="apply-form-field">
+            <label for="apply-name">Full Name <span class="required">*</span></label>
+            <input type="text" id="apply-name" placeholder="Enter your full name" required />
+          </div>
+          <div class="apply-form-field">
+            <label for="apply-email">Email Address <span class="required">*</span></label>
+            <input type="email" id="apply-email" placeholder="you@example.com" required />
+          </div>
+          <div class="apply-form-field apply-form-field-full">
+            <label for="apply-phone">Phone Number</label>
+            <input type="tel" id="apply-phone" placeholder="+91 98765 43210" />
+          </div>
+        </div>
+        <button type="button" id="apply-submit-btn" class="modal-apply-btn" onclick="submitApplication('${job.id}')">
+          Apply Now ${ICONS.arrow}
+        </button>
+        <div id="apply-status" class="apply-status"></div>
+      </form>
+    </div>
   `;
 
     modalOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+}
+
+// ─── Submit Application ───
+async function submitApplication(jobId) {
+    const nameInput = document.getElementById('apply-name');
+    const emailInput = document.getElementById('apply-email');
+    const phoneInput = document.getElementById('apply-phone');
+    const submitBtn = document.getElementById('apply-submit-btn');
+    const statusDiv = document.getElementById('apply-status');
+
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const phone = phoneInput.value.trim();
+
+    // Validation
+    if (!name) {
+        showApplyStatus('Please enter your full name.', 'error');
+        nameInput.focus();
+        return;
+    }
+    if (!email || !email.includes('@')) {
+        showApplyStatus('Please enter a valid email address.', 'error');
+        emailInput.focus();
+        return;
+    }
+
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `${ICONS.loader} Submitting...`;
+    statusDiv.textContent = '';
+    statusDiv.className = 'apply-status';
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/recruitment/apply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ job_id: jobId, name, email, phone: phone || null }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            showApplyStatus(data.error || 'Something went wrong. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `Apply Now ${ICONS.arrow}`;
+            return;
+        }
+
+        // Success!
+        showApplyStatus('🎉 Application submitted successfully! We\'ll be in touch soon.', 'success');
+        submitBtn.innerHTML = `${ICONS.check} Applied!`;
+        submitBtn.classList.add('applied');
+
+        // Clear fields
+        nameInput.value = '';
+        emailInput.value = '';
+        phoneInput.value = '';
+
+        // Keep button disabled — user has applied
+    } catch (err) {
+        console.error('Application error:', err);
+        showApplyStatus('Network error. Please check your connection and try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `Apply Now ${ICONS.arrow}`;
+    }
+}
+
+function showApplyStatus(message, type) {
+    const statusDiv = document.getElementById('apply-status');
+    statusDiv.textContent = message;
+    statusDiv.className = `apply-status apply-status-${type}`;
 }
 
 function closeModal() {
@@ -422,9 +450,7 @@ function initScrollAnimations() {
 
 // ─── Initialize ───
 function init() {
-    populateFilters();
-    renderJobs(JOBS);
-    initHeroStats();
+    fetchJobs();
     initScrollAnimations();
 }
 

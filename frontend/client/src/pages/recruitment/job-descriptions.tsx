@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Search, 
-  MapPin, 
-  Clock, 
-  DollarSign, 
-  Users, 
+import {
+  Search,
+  MapPin,
+  Clock,
+  DollarSign,
+  Users,
   MoreVertical,
   Filter,
   ArrowUpDown,
@@ -41,17 +41,18 @@ import type { Job } from './recruitment-dashboard';
 interface Props {
   jobs: Job[];
   onViewApplicants: (jobTitle: string) => void;
+  onDeleteJob?: (jobId: string) => void;
 }
 
-export default function JobDescriptionsModule({ jobs, onViewApplicants }: Props) {
+export default function JobDescriptionsModule({ jobs, onViewApplicants, onDeleteJob }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
   const filteredJobs = jobs.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.skills.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.skills.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesDept = deptFilter === 'all' || job.department.toLowerCase() === deptFilter.toLowerCase();
     const matchesType = typeFilter === 'all' || job.type.toLowerCase() === typeFilter.toLowerCase();
     return matchesSearch && matchesDept && matchesType;
@@ -64,14 +65,14 @@ export default function JobDescriptionsModule({ jobs, onViewApplicants }: Props)
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input 
-                placeholder="Search by job title or department..." 
+              <Input
+                placeholder="Search by job title or department..."
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-2">
               <Select value={deptFilter} onValueChange={setDeptFilter}>
                 <SelectTrigger className="w-[140px]">
@@ -161,14 +162,14 @@ export default function JobDescriptionsModule({ jobs, onViewApplicants }: Props)
                       <Eye className="h-4 w-4 mr-2" /> View Candidates
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600 flex items-center">
+                    <DropdownMenuItem className="text-red-600 flex items-center" onClick={() => onDeleteJob?.(String(job.id))}>
                       <Trash className="h-4 w-4 mr-2" /> Close Position
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </CardHeader>
               <CardContent>
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-4">
+                <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-4">
                   <div className="flex items-center text-sm text-slate-600">
                     <MapPin className="h-4 w-4 mr-2 text-slate-400" />
                     {job.location}

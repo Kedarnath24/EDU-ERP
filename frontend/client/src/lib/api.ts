@@ -618,3 +618,207 @@ export async function cancelLeaveRequest(
     );
     return result.error ? { error: result.error } : {};
 }
+
+
+// ─────────────────────────────────────────────────────────────
+// Recruitment API
+// ─────────────────────────────────────────────────────────────
+
+export interface JobPosting {
+    id: string;
+    title: string;
+    department: string;
+    location: string;
+    type: string;
+    workMode: string;
+    salaryMin: string;
+    salaryMax: string;
+    description: string;
+    skills: string[];
+    duration: string;
+    experience: string;
+    openings: number;
+    deadline: string;
+    responsibilities: string;
+    requirements: string;
+    benefits: string;
+    education: string;
+    applicants: number;
+    status: string;
+    postedDate: string;
+}
+
+export interface Candidate {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    position: string;
+    department?: string;
+    status: string;
+    source: string;
+    experience: string;
+    skills: string[];
+    notes?: string;
+    appliedDate: string;
+    jobId: string;
+}
+
+export interface RecruitmentStats {
+    stats: {
+        activeJobs: number;
+        totalCandidates: number;
+        hired: number;
+        interviewing: number;
+    };
+    pipeline: Array<{ name: string; value: number; color: string }>;
+    recentActivity: Array<{
+        id: string;
+        user: string;
+        action: string;
+        target: string;
+        time: string;
+    }>;
+}
+
+/** Admin: fetch all job postings */
+export async function getJobPostings(): Promise<{ data?: JobPosting[]; error?: string }> {
+    const result = await apiFetch<{ jobs: JobPosting[] }>('/api/recruitment/jobs');
+    return result.error ? { error: result.error } : { data: result.data!.jobs };
+}
+
+/** Admin: create a new job posting */
+export async function createJobPosting(payload: {
+    title: string;
+    department: string;
+    employmentType: string;
+    location?: string;
+    workMode?: string;
+    salaryMin?: string;
+    salaryMax?: string;
+    description?: string;
+    skills?: string[];
+    duration?: string;
+    experience?: string;
+    openings?: string;
+    deadline?: string;
+    responsibilities?: string;
+    requirements?: string;
+    benefits?: string;
+    education?: string;
+}): Promise<{ data?: JobPosting; error?: string }> {
+    const result = await apiFetch<{ job: JobPosting }>('/api/recruitment/jobs', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+    return result.error ? { error: result.error } : { data: result.data!.job };
+}
+
+/** Admin: update a job posting */
+export async function updateJobPosting(
+    id: string,
+    payload: Partial<JobPosting> & { employmentType?: string }
+): Promise<{ data?: JobPosting; error?: string }> {
+    const result = await apiFetch<{ job: JobPosting }>(`/api/recruitment/jobs/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
+    return result.error ? { error: result.error } : { data: result.data!.job };
+}
+
+/** Admin: delete a job posting */
+export async function deleteJobPosting(id: string): Promise<{ error?: string }> {
+    const result = await apiFetch<{ message: string }>(`/api/recruitment/jobs/${id}`, {
+        method: 'DELETE',
+    });
+    return result.error ? { error: result.error } : {};
+}
+
+/** Admin: fetch all candidates */
+export async function getCandidates(params?: {
+    job_title?: string;
+    status?: string;
+    search?: string;
+}): Promise<{ data?: Candidate[]; total?: number; error?: string }> {
+    const qs = new URLSearchParams();
+    if (params?.job_title) qs.set('job_title', params.job_title);
+    if (params?.status) qs.set('status', params.status);
+    if (params?.search) qs.set('search', params.search);
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+
+    const result = await apiFetch<{ candidates: Candidate[]; total: number }>(
+        `/api/recruitment/candidates${query}`
+    );
+    return result.error
+        ? { error: result.error }
+        : { data: result.data!.candidates, total: result.data!.total };
+}
+
+/** Admin: update a candidate's status */
+export async function updateCandidateStatus(
+    id: string,
+    status: string
+): Promise<{ data?: Candidate; error?: string }> {
+    const result = await apiFetch<{ candidate: Candidate }>(
+        `/api/recruitment/candidates/${id}/status`,
+        { method: 'PATCH', body: JSON.stringify({ status }) }
+    );
+    return result.error ? { error: result.error } : { data: result.data!.candidate };
+}
+
+/** Admin: manually add a candidate */
+export async function addCandidate(payload: {
+    name: string;
+    email: string;
+    phone?: string;
+    position: string;
+    experience?: string;
+    source?: string;
+    skills?: string[];
+}): Promise<{ data?: Candidate; error?: string }> {
+    const result = await apiFetch<{ candidate: Candidate }>('/api/recruitment/candidates', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+    return result.error ? { error: result.error } : { data: result.data!.candidate };
+}
+
+/** Admin: fetch recruitment dashboard stats */
+export async function getRecruitmentStats(): Promise<{ data?: RecruitmentStats; error?: string }> {
+    const result = await apiFetch<RecruitmentStats>('/api/recruitment/stats');
+    return result.error ? { error: result.error } : { data: result.data };
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// Dashboard API
+// ─────────────────────────────────────────────────────────────
+
+export interface DashboardEmployeeStats {
+    total: number;
+    active: number;
+    on_leave: number;
+    inactive: number;
+}
+
+export interface DashboardLeaveStats {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+}
+
+export interface DashboardStats {
+    employees: DashboardEmployeeStats;
+    leave_requests: DashboardLeaveStats;
+}
+
+/**
+ * Fetch aggregated dashboard stats from the backend.
+ * Covers: active employees, leave request summary.
+ * CRM Lead stats are supplied by mock data on the frontend.
+ */
+export async function getDashboardStats(): Promise<{ data?: DashboardStats; error?: string }> {
+    const result = await apiFetch<DashboardStats>('/api/dashboard/stats');
+    return result.error ? { error: result.error } : { data: result.data! };
+}

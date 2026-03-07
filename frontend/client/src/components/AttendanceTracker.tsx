@@ -246,7 +246,7 @@ export default function AttendanceTracker({
 
         <div className="space-y-4">
           {/* Current Time */}
-          <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
             <div className="text-3xl font-bold text-blue-600">
               {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
             </div>

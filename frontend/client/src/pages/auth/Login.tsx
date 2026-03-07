@@ -65,7 +65,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Branding & Features */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-950 via-purple-900 to-indigo-950 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-950 via-teal-900 to-cyan-950 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />
@@ -86,7 +86,7 @@ export default function Login() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">EDU-ERP</h1>
-              <p className="text-purple-300 text-sm">Enterprise Resource Planning</p>
+              <p className="text-emerald-300 text-sm">Enterprise Resource Planning</p>
             </div>
           </div>
 
@@ -99,9 +99,9 @@ export default function Login() {
               </div>
               <h2 className="text-4xl xl:text-5xl font-bold leading-tight">
                 Streamline Your<br />
-                <span className="text-purple-300">Business Operations</span>
+                <span className="text-emerald-300">Business Operations</span>
               </h2>
-              <p className="text-purple-200 text-lg max-w-md">
+              <p className="text-emerald-200 text-lg max-w-md">
                 All-in-one platform for HR, Sales, Projects, Finance, and more.
                 Built for modern enterprises.
               </p>
@@ -119,7 +119,7 @@ export default function Login() {
                   </div>
                   <div>
                     <h3 className="font-semibold">{feature.title}</h3>
-                    <p className="text-purple-300 text-sm">{feature.description}</p>
+                    <p className="text-emerald-300 text-sm">{feature.description}</p>
                   </div>
                 </div>
               ))}
@@ -127,8 +127,8 @@ export default function Login() {
           </div>
 
           {/* Footer */}
-          <div className="text-purple-300 text-sm">
-            © 2026 Z-ERP. All rights reserved.
+          <div className="text-emerald-300 text-sm">
+            © 2026 EDU-ERP. All rights reserved.
           </div>
         </div>
       </div>
@@ -137,21 +137,21 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-slate-50 relative overflow-hidden">
         {/* Background Lights */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-10 right-10 w-72 h-72 bg-purple-300/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-10 w-96 h-96 bg-indigo-300/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-pink-200/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-20 w-80 h-80 bg-purple-400/25 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 left-1/3 w-72 h-72 bg-violet-300/20 rounded-full blur-3xl" />
+          <div className="absolute top-10 right-10 w-72 h-72 bg-emerald-300/30 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 left-10 w-96 h-96 bg-teal-300/20 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-cyan-200/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-20 w-80 h-80 bg-emerald-400/25 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 left-1/3 w-72 h-72 bg-teal-300/20 rounded-full blur-3xl" />
         </div>
 
         <div className="w-full max-w-md relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <div className="h-12 w-12 rounded-xl bg-purple-900 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-xl bg-emerald-700 flex items-center justify-center">
               <Briefcase className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Z-ERP</h1>
+              <h1 className="text-2xl font-bold text-slate-900">EDU-ERP</h1>
               <p className="text-slate-500 text-sm">Enterprise Resource Planning</p>
             </div>
           </div>
@@ -199,7 +199,7 @@ export default function Login() {
                     </Label>
                     <a
                       href="/forgot-password"
-                      className="text-sm text-purple-800 hover:text-purple-900 font-medium"
+                      className="text-sm text-emerald-800 hover:text-emerald-900 font-medium"
                     >
                       Forgot password?
                     </a>
@@ -210,7 +210,7 @@ export default function Login() {
                       id="password"
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Enter your password"
-                      className="pl-11 pr-11 h-12 border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                      className="pl-11 pr-11 h-12 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -230,7 +230,7 @@ export default function Login() {
                     id="remember"
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                    className="border-slate-300 data-[state=checked]:bg-purple-900 data-[state=checked]:border-purple-900"
+                    className="border-slate-300 data-[state=checked]:bg-emerald-700 data-[state=checked]:border-emerald-700"
                   />
                   <Label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer">
                     Remember me
@@ -240,7 +240,7 @@ export default function Login() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-purple-900 hover:bg-purple-950 text-white font-semibold text-base gap-2"
+                  className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-base gap-2"
                   disabled={isLoading}
                 >
                   {isLoading ? (

@@ -1286,11 +1286,11 @@ export default function HRMPayroll() {
                           <div
                             key={employee.id}
                             onClick={() => openIndividualPayroll(employee)}
-                            className="group relative bg-gradient-to-br from-white via-slate-50 to-white rounded-3xl p-6 border-2 border-slate-200 hover:border-purple-400 hover:shadow-2xl hover:shadow-purple-200/50 transition-all duration-500 cursor-pointer animate-in slide-in-from-bottom-8 fade-in"
+                            className="group relative bg-gradient-to-br from-white via-slate-50 to-white rounded-3xl p-6 border-2 border-slate-200 hover:border-teal-400 hover:shadow-2xl hover:shadow-teal-200/50 transition-all duration-500 cursor-pointer animate-in slide-in-from-bottom-8 fade-in"
                             style={{ animationDelay: `${index * 100}ms` }}
                           >
                             {/* Hover Glow Effect */}
-                            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-600/0 via-indigo-600/0 to-purple-600/0 group-hover:from-purple-600/5 group-hover:via-indigo-600/5 group-hover:to-purple-600/5 transition-all duration-500" />
+                            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-teal-600/0 via-emerald-600/0 to-teal-600/0 group-hover:from-teal-600/5 group-hover:via-emerald-600/5 group-hover:to-teal-600/5 transition-all duration-500" />
                             
                             {/* Status Badge */}
                             <div className="absolute top-4 right-4 z-10">

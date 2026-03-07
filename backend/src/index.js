@@ -59,5 +59,5 @@ app.use((err, _req, res, _next) => {
 
 // --------------- Start ---------------
 app.listen(PORT, () => {
-  console.log(`✅ Z-ERP Backend running on http://localhost:${PORT}`);
+  console.log(`✅ EDU-ERP Backend running on http://localhost:${PORT}`);
 });

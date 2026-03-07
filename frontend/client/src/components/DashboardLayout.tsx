@@ -13,7 +13,6 @@ import {
   ShoppingCart,
   Briefcase,
   Package,
-  MessageCircle,
   MessageSquareMore,
   CreditCard,
   Settings,
@@ -26,7 +25,6 @@ import {
   Plus,
   LogIn,
   Smile,
-  Send,
   X,
   DollarSign,
   FileText,
@@ -76,12 +74,9 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
 
   // New state for header actions
   const [searchOpen, setSearchOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [chatMessage, setChatMessage] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSearchIndex, setSelectedSearchIndex] = useState(0);
 
@@ -328,7 +323,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   // Category colors (memoized)
   const getCategoryColor = useCallback((category: string) => {
     const colors: Record<string, string> = {
-      'Dashboard': 'bg-indigo-100 text-indigo-700',
+      'Dashboard': 'bg-teal-100 text-teal-700',
       'Projects': 'bg-purple-100 text-purple-700',
       'HR': 'bg-green-100 text-green-700',
       'Sales': 'bg-blue-100 text-blue-700',
@@ -597,15 +592,15 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               {orgLogo ? (
                 <img src={orgLogo} alt="Logo" className="h-full w-full rounded-lg object-cover" />
               ) : (
-                <img src="/favicon.png" alt="Z-ERP" className="h-full w-full object-contain" />
+                <img src="/favicon.png" alt="EDU-ERP" className="h-full w-full object-contain" />
               )}
             </motion.div>
             {expanded && (
               <div className="bg-gradient-to-br from-white via-slate-50 to-slate-100 rounded-xl px-4 py-3 shadow-[0_8px_16px_rgba(0,0,0,0.3),0_2px_4px_rgba(0,0,0,0.2)] border border-slate-300/50 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
                 <div className="flex items-center justify-center relative z-10">
-                  <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                    Z-ERP
+                  <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                    EDU-ERP
                   </div>
                 </div>
               </div>
@@ -652,14 +647,14 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                   {orgLogo ? (
                     <img src={orgLogo} alt="Logo" className="h-full w-full rounded-lg object-cover" />
                   ) : (
-                    <img src="/favicon.png" alt="Z-ERP" className="h-full w-full object-contain" />
+                    <img src="/favicon.png" alt="EDU-ERP" className="h-full w-full object-contain" />
                   )}
                 </div>
                 <div className="bg-gradient-to-br from-white via-slate-50 to-slate-100 rounded-xl px-4 py-3 shadow-[0_8px_16px_rgba(0,0,0,0.3),0_2px_4px_rgba(0,0,0,0.2)] border border-slate-300/50 relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
                   <div className="flex items-center justify-center relative z-10">
-                    <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                      Z-ERP
+                    <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                      EDU-ERP
                     </div>
                   </div>
                 </div>
@@ -747,7 +742,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <Input
                   placeholder="Search pages, features, settings..."
-                  className="pl-11 pr-20 h-11 bg-white/70 backdrop-blur-md border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all shadow-sm"
+                  className="pl-11 pr-20 h-11 bg-white/70 backdrop-blur-md border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition-all shadow-sm"
                   onClick={() => setSearchOpen(true)}
                   readOnly
                 />
@@ -758,17 +753,6 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Team Chat Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-full hover:bg-slate-100 relative"
-                onClick={() => setChatOpen(true)}
-              >
-                <MessageCircle size={18} className="text-slate-600" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-green-500 rounded-full"></span>
-              </Button>
-
               {/* Check-in Button */}
               <Button
                 variant="ghost"
@@ -792,7 +776,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
 
               {/* Add Task Button */}
               <Button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+                className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
                 onClick={() => setTaskDialogOpen(true)}
               >
                 <Plus size={18} />
@@ -892,7 +876,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                       <Link key={idx} href={result.path}>
                         <div
                           className={`p-3 rounded-lg cursor-pointer transition-all ${idx === selectedSearchIndex
-                            ? 'bg-indigo-50 border border-indigo-200 shadow-sm'
+                            ? 'bg-teal-50 border border-teal-200 shadow-sm'
                             : 'hover:bg-slate-50 border border-transparent'
                             }`}
                           onClick={() => setSearchOpen(false)}
@@ -917,83 +901,6 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
                 </ScrollArea>
               </div>
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Team Chat Dialog */}
-      <Dialog open={chatOpen} onOpenChange={setChatOpen}>
-        <DialogContent className="max-w-4xl h-[600px] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Team Chat</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 flex gap-4 overflow-hidden">
-            {/* Conversations List */}
-            <div className="w-1/3 border-r pr-4">
-              <ScrollArea className="h-full">
-                <div className="space-y-2">
-                  {['Engineering Team', 'Marketing Team', 'Sales Team', 'Support Team'].map((team, idx) => (
-                    <div key={idx} className="p-3 hover:bg-slate-100 rounded-lg cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarFallback>{team.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{team}</p>
-                          <p className="text-xs text-gray-500 truncate">Last message...</p>
-                        </div>
-                        <span className="text-xs text-gray-400">2m</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-
-            {/* Chat Window */}
-            <div className="flex-1 flex flex-col">
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  <div className="flex gap-3">
-                    <Avatar>
-                      <AvatarFallback>JD</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">John Doe</p>
-                      <div className="mt-1 bg-slate-100 p-3 rounded-lg">
-                        <p className="text-sm">Hello team! How's the project going?</p>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">2:30 PM</p>
-                    </div>
-                  </div>
-                </div>
-              </ScrollArea>
-
-              {/* Message Input */}
-              <div className="border-t pt-4">
-                <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <Input
-                      placeholder="Type a message..."
-                      value={chatMessage}
-                      onChange={(e) => setChatMessage(e.target.value)}
-                      className="pr-10"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    >
-                      <Smile size={16} className="text-gray-500" />
-                    </Button>
-                  </div>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700">
-                    <Send size={16} />
-                  </Button>
-                </div>
-              </div>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -1069,7 +976,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
               </div>
             </div>
             <div className="flex gap-2 pt-4">
-              <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700">
+              <Button className="flex-1 bg-teal-600 hover:bg-teal-700">
                 <Plus size={16} className="mr-2" />
                 Create Task
               </Button>

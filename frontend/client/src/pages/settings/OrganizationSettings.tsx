@@ -65,19 +65,19 @@ const OrganizationSettings = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Company Profile
-    const [companyName, setCompanyName] = useState("Z-ERP Inc.");
+    const [companyName, setCompanyName] = useState("EDU-ERP Inc.");
     const [companyTagline, setCompanyTagline] = useState("Powering next-gen enterprise workflows.");
     const [industry, setIndustry] = useState("Technology");
     const [companySize, setCompanySize] = useState("11–50 (Small)");
     const [founded, setFounded] = useState("2023");
-    const [website, setWebsite] = useState("https://z-erp.io");
-    const [description, setDescription] = useState("Z-ERP is a modern enterprise resource planning platform designed for growing businesses. We help teams streamline HR, CRM, and operations in one place.");
+    const [website, setWebsite] = useState("https://edu-erp.io");
+    const [description, setDescription] = useState("EDU-ERP is a modern enterprise resource planning platform designed for growing businesses. We help teams streamline HR, CRM, and operations in one place.");
 
     // Logo
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
     // Contact
-    const [email, setEmail] = useState("contact@z-erp.io");
+    const [email, setEmail] = useState("contact@edu-erp.io");
     const [phone, setPhone] = useState("+91 98765 43210");
     const [address, setAddress] = useState("Level 12, Prestige Tower, Bandra Kurla Complex");
     const [city, setCity] = useState("Mumbai");

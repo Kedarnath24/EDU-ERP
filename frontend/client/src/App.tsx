@@ -84,7 +84,7 @@ function AppRouter() {
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-50">
-        <div className="h-12 w-12 border-4 border-purple-900/30 border-t-purple-900 rounded-full animate-spin" />
+        <div className="h-12 w-12 border-4 border-emerald-700/30 border-t-emerald-700 rounded-full animate-spin" />
       </div>
     );
   }

@@ -902,8 +902,8 @@ export default function HRMEmployees() {
                 <ArrowLeft className="h-5 w-5 text-slate-600" />
               </Button>
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-600/10 rounded-xl">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="p-2.5 bg-emerald-600/10 rounded-xl">
+                  <Users className="h-6 w-6 text-emerald-600" />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-slate-900 tracking-tight">Employee Directory</h1>
@@ -940,22 +940,22 @@ export default function HRMEmployees() {
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
-                    className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 rounded-xl font-bold transition-all active:scale-95"
+                    className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 rounded-xl font-bold transition-all active:scale-95"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Employee
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
-                  <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-700 p-6">
+                  <div className="h-24 bg-gradient-to-r from-emerald-600 to-teal-700 p-6">
                     <DialogTitle className="text-2xl font-bold text-white tracking-tight">✨ New Employee Onboarding</DialogTitle>
-                    <DialogDescription className="text-blue-100 font-medium">Complete employee profile with documents and banking details</DialogDescription>
+                    <DialogDescription className="text-emerald-100 font-medium">Complete employee profile with documents and banking details</DialogDescription>
                   </div>
 
                   <div className="overflow-y-auto max-h-[calc(90vh-200px)]">
                     <div className="p-8 space-y-6">
                       {/* Profile Photo Upload */}
-                      <div className="flex items-center gap-6 p-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl border-2 border-indigo-100">
+                      <div className="flex items-center gap-6 p-6 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border-2 border-emerald-100">
                         <div className="relative group">
                           {newEmployee.photo ? (
                             <div className="h-24 w-24 rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow">
@@ -966,7 +966,7 @@ export default function HRMEmployees() {
                               />
                             </div>
                           ) : (
-                            <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                            <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
                               <UserPlus className="h-10 w-10 text-white" />
                             </div>
                           )}
@@ -998,7 +998,7 @@ export default function HRMEmployees() {
                       {/* Basic Information */}
                       <div className="space-y-4">
                         <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                          <UserPlus className="h-4 w-4 text-blue-600" />
+                          <UserPlus className="h-4 w-4 text-emerald-600" />
                           Basic Information
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
@@ -1060,7 +1060,7 @@ export default function HRMEmployees() {
                       {/* Contact Information */}
                       <div className="space-y-4">
                         <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-blue-600" />
+                          <Phone className="h-4 w-4 text-emerald-600" />
                           Contact Information
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
@@ -1109,7 +1109,7 @@ export default function HRMEmployees() {
                       {/* Bank Details */}
                       <div className="space-y-4">
                         <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                          <Briefcase className="h-4 w-4 text-blue-600" />
+                          <Briefcase className="h-4 w-4 text-emerald-600" />
                           Bank Account Details
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
@@ -1155,7 +1155,7 @@ export default function HRMEmployees() {
                       {/* Government ID Numbers */}
                       <div className="space-y-4">
                         <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-blue-600" />
+                          <FileText className="h-4 w-4 text-emerald-600" />
                           Government IDs
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
@@ -1194,13 +1194,13 @@ export default function HRMEmployees() {
                       {/* Document Uploads */}
                       <div className="space-y-4">
                         <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                          <Upload className="h-4 w-4 text-blue-600" />
+                          <Upload className="h-4 w-4 text-emerald-600" />
                           Documents Upload
                         </h3>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Aadhaar Card</Label>
-                            <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-slate-300 rounded-xl hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer group">
+                            <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-slate-300 rounded-xl hover:border-emerald-400 hover:bg-emerald-50/50 transition-all cursor-pointer group">
                               {newEmployee.aadhaarDoc ? (
                                 <div className="text-center px-2">
                                   <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" />
@@ -1208,7 +1208,7 @@ export default function HRMEmployees() {
                                 </div>
                               ) : (
                                 <>
-                                  <Upload className="h-6 w-6 text-slate-400 group-hover:text-blue-600 mb-2" />
+                                  <Upload className="h-6 w-6 text-slate-400 group-hover:text-emerald-600 mb-2" />
                                   <span className="text-xs font-medium text-slate-500">Upload PDF</span>
                                 </>
                               )}
@@ -1226,7 +1226,7 @@ export default function HRMEmployees() {
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">PAN Card</Label>
-                            <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-slate-300 rounded-xl hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer group">
+                            <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-slate-300 rounded-xl hover:border-emerald-400 hover:bg-emerald-50/50 transition-all cursor-pointer group">
                               {newEmployee.panDoc ? (
                                 <div className="text-center px-2">
                                   <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" />
@@ -1234,7 +1234,7 @@ export default function HRMEmployees() {
                                 </div>
                               ) : (
                                 <>
-                                  <Upload className="h-6 w-6 text-slate-400 group-hover:text-blue-600 mb-2" />
+                                  <Upload className="h-6 w-6 text-slate-400 group-hover:text-emerald-600 mb-2" />
                                   <span className="text-xs font-medium text-slate-500">Upload PDF</span>
                                 </>
                               )}
@@ -1252,7 +1252,7 @@ export default function HRMEmployees() {
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Resume/CV</Label>
-                            <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-slate-300 rounded-xl hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer group">
+                            <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-slate-300 rounded-xl hover:border-emerald-400 hover:bg-emerald-50/50 transition-all cursor-pointer group">
                               {newEmployee.resume ? (
                                 <div className="text-center px-2">
                                   <CheckCircle className="h-6 w-6 text-emerald-600 mx-auto mb-1" />
@@ -1260,7 +1260,7 @@ export default function HRMEmployees() {
                                 </div>
                               ) : (
                                 <>
-                                  <Upload className="h-6 w-6 text-slate-400 group-hover:text-blue-600 mb-2" />
+                                  <Upload className="h-6 w-6 text-slate-400 group-hover:text-emerald-600 mb-2" />
                                   <span className="text-xs font-medium text-slate-500">Upload PDF</span>
                                 </>
                               )}
@@ -1284,7 +1284,7 @@ export default function HRMEmployees() {
 
                   <div className="px-8 pb-8 pt-4 border-t border-slate-100 flex gap-3 bg-slate-50">
                     <Button variant="ghost" className="flex-1 rounded-xl h-12 font-bold text-slate-500 hover:bg-slate-100" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                    <Button className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl h-12 font-bold shadow-lg shadow-blue-200" onClick={() => void handleAddEmployee()}>
+                    <Button className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl h-12 font-bold shadow-lg shadow-emerald-200" onClick={() => void handleAddEmployee()}>
                       <UserPlus className="h-4 w-4 mr-2" />
                       Create Employee Profile
                     </Button>
@@ -1313,7 +1313,7 @@ export default function HRMEmployees() {
                     className={cn(
                       "px-6 py-2.5 rounded-xl transition-all capitalize font-bold",
                       activeTab === tab
-                        ? "bg-white text-blue-600 shadow-sm border border-blue-100/50"
+                        ? "bg-white text-emerald-600 shadow-sm border border-emerald-100/50"
                         : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50"
                     )}
                   >
@@ -1397,14 +1397,14 @@ export default function HRMEmployees() {
                           <CardContent className="p-4 sm:p-6">
                             <div className="flex items-center justify-between">
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1 truncate">Avg Progress</p>
+                                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 truncate">Avg Progress</p>
                                 <h3 className="text-2xl sm:text-3xl font-black text-blue-700">
                                   {Math.round(filteredEmployees.filter(emp => emp.status === 'exit').reduce((acc: number, emp: any) => acc + (emp.exitWorkflow?.progress || 0), 0) / filteredEmployees.filter(emp => emp.status === 'exit').length) || 0}%
                                 </h3>
                                 <p className="text-xs text-blue-500 mt-1">Overall</p>
                               </div>
                               <div className="p-2 sm:p-3 bg-blue-200 rounded-xl flex-shrink-0">
-                                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
                               </div>
                             </div>
                           </CardContent>
@@ -1425,18 +1425,18 @@ export default function HRMEmployees() {
                           </CardContent>
                         </Card>
 
-                        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100/50">
+                        <Card className="border-teal-200 bg-gradient-to-br from-teal-50 to-teal-100/50">
                           <CardContent className="p-4 sm:p-6">
                             <div className="flex items-center justify-between">
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1 truncate">Interviews</p>
-                                <h3 className="text-2xl sm:text-3xl font-black text-purple-700">
+                                <p className="text-xs font-bold text-teal-600 uppercase tracking-wider mb-1 truncate">Interviews</p>
+                                <h3 className="text-2xl sm:text-3xl font-black text-teal-700">
                                   {filteredEmployees.filter(emp => emp.status === 'exit' && emp.exitWorkflow?.exitInterviewScheduled).length}
                                 </h3>
-                                <p className="text-xs text-purple-500 mt-1">Scheduled</p>
+                                <p className="text-xs text-teal-500 mt-1">Scheduled</p>
                               </div>
-                              <div className="p-2 sm:p-3 bg-purple-200 rounded-xl flex-shrink-0">
-                                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
+                              <div className="p-2 sm:p-3 bg-teal-200 rounded-xl flex-shrink-0">
+                                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600" />
                               </div>
                             </div>
                           </CardContent>
@@ -1484,10 +1484,10 @@ export default function HRMEmployees() {
                               variant="outline"
                               onClick={() => handleButtonAction('schedule_interview')}
                               disabled={loadingStates['schedule_interview']}
-                              className="rounded-xl text-xs font-bold border-purple-300 text-purple-600 hover:bg-purple-50 hover:border-purple-400 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                              className="rounded-xl text-xs font-bold border-teal-300 text-teal-600 hover:bg-teal-50 hover:border-teal-400 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
                             >
                               {loadingStates['schedule_interview'] ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600 mr-1" />
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-teal-600 mr-1" />
                               ) : (
                                 <Calendar className="h-4 w-4 mr-1" />
                               )}
@@ -1540,7 +1540,7 @@ export default function HRMEmployees() {
                           <Card key={employee.id} className="border-rose-200/60 hover:shadow-xl transition-all duration-300 bg-white">
                             <CardContent className="p-0">
                               {/* Employee Header with Progress */}
-                              <div className="p-4 sm:p-6 bg-gradient-to-r from-rose-50 to-purple-50 rounded-t-lg">
+                              <div className="p-4 sm:p-6 bg-gradient-to-r from-rose-50 to-teal-50 rounded-t-lg">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                   <div className="flex items-center gap-4">
                                     <Avatar className="h-14 w-14 sm:h-16 sm:w-16 border-3 border-white shadow-lg">
@@ -2484,7 +2484,7 @@ export default function HRMEmployees() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-[2rem] p-0 border-none shadow-2xl">
           {/* Header Section with Gradient Background */}
-          <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 rounded-t-[2rem]">
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-6 rounded-t-[2rem]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-xl">
@@ -2734,7 +2734,7 @@ function EmployeeCard({
 
   return (
     <Card className="group hover:border-blue-200 hover:shadow-xl transition-all duration-300 rounded-[1.5rem] overflow-hidden border-slate-200/60 flex flex-col bg-white">
-      <div className="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500" />
+      <div className="h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
       <CardContent className="p-6 flex-1">
         <div className="flex justify-between items-start mb-5">
           <div className="relative group">
@@ -2796,7 +2796,7 @@ function EmployeeCard({
                 Edit Profile Info
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => toast({ title: "View Docs", description: "Loading documents..." })} className="cursor-pointer">
-                <FileText className="h-4 w-4 mr-2 text-indigo-600" />
+                <FileText className="h-4 w-4 mr-2 text-teal-600" />
                 Employee Dossier
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => document.getElementById(`photo-upload-${employee.id}`)?.click()} className="cursor-pointer">
@@ -2855,7 +2855,7 @@ function EmployeeCard({
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl rounded-[2rem] overflow-hidden p-0 border-none shadow-2xl">
-            <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-700 relative">
+            <div className="h-32 bg-gradient-to-r from-emerald-600 to-teal-700 relative">
               <div className="absolute -bottom-12 left-8 p-1.5 bg-white rounded-[2rem] shadow-xl">
                 <Avatar className="h-28 w-28 border-2 border-white">
                   <AvatarImage src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${employee.name}`} />
@@ -2976,7 +2976,7 @@ function EmployeeCard({
 
               <div className="flex gap-3">
                 <Button
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-2xl py-7 h-auto font-bold shadow-lg shadow-blue-200 transition-all active:scale-[0.98] hover:shadow-xl"
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-2xl py-7 h-auto font-bold shadow-lg shadow-emerald-200 transition-all active:scale-[0.98] hover:shadow-xl"
                   onClick={() => {
                     setIsOverviewDialogOpen(false);
                     onEdit(employee);

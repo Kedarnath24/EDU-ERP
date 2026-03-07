@@ -80,7 +80,7 @@ export default function ForgotPassword() {
                 <p className="text-slate-500 text-sm max-w-sm">
                   If <strong>{email}</strong> is registered, you'll receive an email with a link to reset your password. Check your spam folder if you don't see it.
                 </p>
-                <a href="/login" className="text-sm text-purple-800 hover:text-purple-900 inline-flex items-center gap-2 mt-2">
+                <a href="/login" className="text-sm text-emerald-800 hover:text-emerald-900 inline-flex items-center gap-2 mt-2">
                   <ArrowLeft className="h-4 w-4" /> Back to sign in
                 </a>
               </div>
@@ -105,7 +105,7 @@ export default function ForgotPassword() {
                   <a href="/login" className="text-sm text-slate-600 hover:text-slate-800 inline-flex items-center gap-2">
                     <ArrowLeft className="h-4 w-4" /> Back to sign in
                   </a>
-                  <Button type="submit" className="bg-purple-900 hover:bg-purple-950 text-white" disabled={loading}>
+                  <Button type="submit" className="bg-emerald-700 hover:bg-emerald-800 text-white" disabled={loading}>
                     {loading ? 'Sending...' : 'Send reset link'}
                   </Button>
                 </div>

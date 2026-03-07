@@ -358,7 +358,7 @@ export default function HRMAutomation() {
                         }
                         handleCreateWorkflow();
                       }}
-                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl h-12 font-bold shadow-lg shadow-indigo-100 text-white"
+                      className="flex-1 bg-teal-600 hover:bg-teal-700 rounded-xl h-12 font-bold shadow-lg shadow-teal-100 text-white"
                     >
                       Create Workflow
                     </Button>

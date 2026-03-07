@@ -54,8 +54,8 @@ const CURRENCIES = [
 const GeneralSettings = () => {
   const { toast } = useToast();
 
-  const [workspaceName, setWorkspaceName] = useState("Z-ERP Workspace");
-  const [workspaceUrl, setWorkspaceUrl] = useState("z-erp.app");
+  const [workspaceName, setWorkspaceName] = useState("EDU-ERP Workspace");
+  const [workspaceUrl, setWorkspaceUrl] = useState("edu-erp.app");
   const [timezone, setTimezone] = useState("Asia/Kolkata");
   const [language, setLanguage] = useState("en");
   const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");

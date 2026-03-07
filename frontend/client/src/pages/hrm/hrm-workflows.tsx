@@ -195,7 +195,7 @@ export default function HRMWorkflows() {
             
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <Card className="border-none bg-indigo-600 text-white shadow-xl shadow-indigo-100 rounded-[2rem] overflow-hidden group">
+               <Card className="border-none bg-teal-600 text-white shadow-xl shadow-teal-100 rounded-[2rem] overflow-hidden group">
                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
                      <UserCheck className="h-32 w-32" />
                   </div>
@@ -258,7 +258,7 @@ export default function HRMWorkflows() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {filteredWorkflows.map((wf) => (
-                <Card key={wf.id} className="group border-slate-200/60 shadow-sm hover:shadow-xl hover:shadow-indigo-50 transition-all duration-300 rounded-[2rem] overflow-hidden bg-white">
+                <Card key={wf.id} className="group border-slate-200/60 shadow-sm hover:shadow-xl hover:shadow-teal-50 transition-all duration-300 rounded-[2rem] overflow-hidden bg-white">
                   <CardContent className="p-0">
                     <div className="p-8">
                       <div className="flex justify-between items-start mb-6">
@@ -499,7 +499,7 @@ export default function HRMWorkflows() {
                    <div className="flex gap-3">
                       <Button variant="ghost" className="font-black text-slate-400 hover:bg-slate-100 rounded-xl h-11 px-6" onClick={() => setIsBuilderOpen(false)}>Discard Changes</Button>
                       <Button 
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl h-11 px-8 shadow-xl shadow-indigo-100"
+                        className="bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl h-11 px-8 shadow-xl shadow-teal-100"
                         onClick={() => {
                           toast({ title: "Workflow Published", description: "The new approval sequence is now live for all users." });
                           setIsBuilderOpen(false);

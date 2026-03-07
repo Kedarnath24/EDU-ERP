@@ -53,22 +53,13 @@ const MOCK_LEADS = {
     newThisMonth: 29,
     conversionRate: 24.9,  // achieved / (achieved + lost) approx
     pipeline: [
-        { stage: 'New Lead', count: 29, color: 'bg-slate-400', bar: 'bg-gradient-to-r from-slate-400 to-slate-500', icon: Target, percentage: 19.6 },
-        { stage: 'Interested', count: 24, color: 'bg-blue-400', bar: 'bg-gradient-to-r from-blue-400 to-blue-500', icon: Users, percentage: 16.2 },
-        { stage: 'Follow-up', count: 18, color: 'bg-cyan-400', bar: 'bg-gradient-to-r from-cyan-400 to-cyan-500', icon: Clock, percentage: 12.2 },
-        { stage: 'Counselling', count: 10, color: 'bg-teal-400', bar: 'bg-gradient-to-r from-teal-400 to-teal-500', icon: UserCheck, percentage: 6.8 },
-        { stage: 'Admission Done', count: 37, color: 'bg-emerald-400', bar: 'bg-gradient-to-r from-emerald-400 to-emerald-500', icon: Award, percentage: 25.0 },
-        { stage: 'Lost', count: 22, color: 'bg-rose-400', bar: 'bg-gradient-to-r from-rose-400 to-rose-500', icon: XCircle, percentage: 14.9 },
+        { stage: 'New Lead', count: 29, color: 'bg-slate-400', bar: 'bg-slate-500' },
+        { stage: 'Interested', count: 24, color: 'bg-blue-400', bar: 'bg-blue-500' },
+        { stage: 'Follow-up', count: 18, color: 'bg-indigo-400', bar: 'bg-indigo-500' },
+        { stage: 'Counselling', count: 10, color: 'bg-violet-400', bar: 'bg-violet-500' },
+        { stage: 'Admission Done', count: 37, color: 'bg-emerald-400', bar: 'bg-emerald-500' },
+        { stage: 'Lost', count: 22, color: 'bg-rose-400', bar: 'bg-rose-500' },
     ],
-    totalValue: 4850000, // Total pipeline value in dollars
-    avgDealSize: 32770,  // Average deal size
-    topSource: 'Website',
-    conversionFunnel: [
-        { stage: 'Leads Generated', count: 148, dropoff: 0 },
-        { stage: 'Qualified', count: 95, dropoff: 35.8 },
-        { stage: 'In Negotiation', count: 52, dropoff: 45.3 },
-        { stage: 'Won', count: 37, dropoff: 28.8 },
-    ]
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -316,196 +307,59 @@ export default function Dashboard() {
                 <div className="grid gap-6 lg:grid-cols-3">
 
                     {/* CRM Lead Pipeline  — 2/3 width */}
-                    <Card className="lg:col-span-2 border-slate-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                        <CardHeader className="pb-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-b border-emerald-100">
+                    <Card className="lg:col-span-2 border-slate-200 shadow-sm">
+                        <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
-                                        <div className="p-2 bg-emerald-500 rounded-xl">
-                                            <BarChart3 className="h-5 w-5 text-white" />
-                                        </div>
-                                        Total Lead Pipeline
+                                    <CardTitle className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                        <BarChart3 className="h-5 w-5 text-indigo-500" />
+                                        CRM Lead Pipeline
                                     </CardTitle>
-                                    <CardDescription className="text-slate-600 mt-1 font-medium">
-                                        Complete funnel view with conversion metrics and stage analysis
+                                    <CardDescription className="text-slate-500 mt-0.5">
+                                        Stage-by-stage breakdown · mock data (backend not yet implemented)
                                     </CardDescription>
                                 </div>
                                 <Button
-                                    variant="default"
+                                    variant="ghost"
                                     size="sm"
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl gap-2 shadow-md"
+                                    className="text-indigo-600 font-bold rounded-xl gap-1"
                                     onClick={() => setLocation('/leads')}
                                 >
-                                    View CRM <ArrowRight className="h-4 w-4" />
+                                    View CRM <ArrowRight className="h-3.5 w-3.5" />
                                 </Button>
                             </div>
-
-                            {/* Key Metrics Row */}
-                            <div className="grid grid-cols-4 gap-3 mt-4">
-                                <div className="bg-white rounded-xl p-3 shadow-sm border border-emerald-100">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Briefcase className="h-4 w-4 text-emerald-600" />
-                                        <span className="text-xs font-semibold text-slate-500">Pipeline Value</span>
-                                    </div>
-                                    <p className="text-2xl font-black text-emerald-600">
-                                        ${(MOCK_LEADS.totalValue / 1000000).toFixed(2)}M
-                                    </p>
-                                </div>
-                                <div className="bg-white rounded-xl p-3 shadow-sm border border-teal-100">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Target className="h-4 w-4 text-teal-600" />
-                                        <span className="text-xs font-semibold text-slate-500">Avg Deal Size</span>
-                                    </div>
-                                    <p className="text-2xl font-black text-teal-600">
-                                        ${(MOCK_LEADS.avgDealSize / 1000).toFixed(1)}k
-                                    </p>
-                                </div>
-                                <div className="bg-white rounded-xl p-3 shadow-sm border border-cyan-100">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Activity className="h-4 w-4 text-cyan-600" />
-                                        <span className="text-xs font-semibold text-slate-500">Conversion Rate</span>
-                                    </div>
-                                    <p className="text-2xl font-black text-cyan-600">
-                                        {MOCK_LEADS.conversionRate}%
-                                    </p>
-                                </div>
-                                <div className="bg-white rounded-xl p-3 shadow-sm border border-blue-100">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Building2 className="h-4 w-4 text-blue-600" />
-                                        <span className="text-xs font-semibold text-slate-500">Top Source</span>
-                                    </div>
-                                    <p className="text-lg font-black text-blue-600">
-                                        {MOCK_LEADS.topSource}
-                                    </p>
-                                </div>
-                            </div>
                         </CardHeader>
-                        <CardContent className="pt-6 space-y-4">
-                            {/* Enhanced Pipeline Stages */}
-                            <div className="space-y-4">
-                                {MOCK_LEADS.pipeline.map((stage, index) => {
-                                    const Icon = stage.icon;
-                                    return (
-                                        <div 
-                                            key={stage.stage} 
-                                            className="group hover:bg-slate-50 rounded-xl p-3 transition-all duration-300 cursor-pointer border border-transparent hover:border-slate-200"
-                                        >
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={cn('p-2 rounded-lg', stage.color.replace('bg-', 'bg-') + '/20')}>
-                                                        <Icon className={cn('h-4 w-4', stage.color.replace('bg-', 'text-'))} />
-                                                    </div>
-                                                    <div>
-                                                        <span className="font-bold text-slate-900 text-sm">{stage.stage}</span>
-                                                        <p className="text-xs text-slate-500 font-medium">
-                                                            {stage.percentage}% of total pipeline
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className="text-2xl font-black text-slate-900">{stage.count}</span>
-                                                    <p className="text-xs font-semibold text-slate-500">leads</p>
-                                                </div>
-                                            </div>
-                                            <div className="relative h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className={cn(
-                                                        'h-full rounded-full transition-all duration-700 shadow-sm',
-                                                        stage.bar,
-                                                        'group-hover:shadow-md'
-                                                    )}
-                                                    style={{ 
-                                                        width: `${(stage.count / maxPipelineCount) * 100}%`,
-                                                        animationDelay: `${index * 100}ms`
-                                                    }}
-                                                />
-                                            </div>
+                        <CardContent className="pt-2 space-y-3">
+                            {MOCK_LEADS.pipeline.map((stage) => (
+                                <div key={stage.stage} className="space-y-1">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <span className={cn('h-2.5 w-2.5 rounded-full', stage.color)} />
+                                            <span className="font-semibold text-slate-700">{stage.stage}</span>
                                         </div>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Conversion Funnel Visualization */}
-                            <div className="mt-6 p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
-                                <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                                    <TrendingUp className="h-4 w-4 text-emerald-600" />
-                                    Conversion Funnel
-                                </h4>
-                                <div className="space-y-2">
-                                    {MOCK_LEADS.conversionFunnel.map((funnel, index) => (
-                                        <div key={funnel.stage} className="relative">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs font-semibold text-slate-600">{funnel.stage}</span>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-black text-slate-900">{funnel.count}</span>
-                                                    {index > 0 && (
-                                                        <span className="text-xs font-bold text-rose-600">
-                                                            -{funnel.dropoff}%
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-700"
-                                                    style={{ width: `${(funnel.count / MOCK_LEADS.conversionFunnel[0].count) * 100}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
+                                        <span className="font-black text-slate-900">{stage.count}</span>
+                                    </div>
+                                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div
+                                            className={cn('h-full rounded-full transition-all duration-700', stage.bar)}
+                                            style={{ width: `${(stage.count / maxPipelineCount) * 100}%` }}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                            ))}
 
-                            {/* Summary row with enhanced design */}
-                            <div className="grid grid-cols-3 gap-3 pt-4 border-t-2 border-slate-200">
+                            {/* Summary row */}
+                            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-100 mt-2">
                                 {[
-                                    { 
-                                        label: 'In Progress', 
-                                        value: MOCK_LEADS.inProgress, 
-                                        color: 'text-blue-600', 
-                                        bg: 'bg-blue-50',
-                                        border: 'border-blue-200',
-                                        icon: Clock
-                                    },
-                                    { 
-                                        label: 'Won', 
-                                        value: MOCK_LEADS.achieved, 
-                                        color: 'text-emerald-600', 
-                                        bg: 'bg-emerald-50',
-                                        border: 'border-emerald-200',
-                                        icon: CheckCircle2
-                                    },
-                                    { 
-                                        label: 'Lost', 
-                                        value: MOCK_LEADS.lost, 
-                                        color: 'text-rose-600', 
-                                        bg: 'bg-rose-50',
-                                        border: 'border-rose-200',
-                                        icon: XCircle
-                                    },
-                                ].map(item => {
-                                    const Icon = item.icon;
-                                    return (
-                                        <div 
-                                            key={item.label} 
-                                            className={cn(
-                                                'relative overflow-hidden rounded-2xl py-4 px-3 border-2 transition-all duration-300 hover:shadow-md cursor-pointer group',
-                                                item.bg,
-                                                item.border
-                                            )}
-                                        >
-                                            <div className="relative z-10">
-                                                <Icon className={cn('h-5 w-5 mb-2', item.color)} />
-                                                <div className={cn('text-3xl font-black', item.color)}>{item.value}</div>
-                                                <div className="text-xs font-bold text-slate-600 mt-1">{item.label}</div>
-                                            </div>
-                                            <div className={cn(
-                                                'absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300',
-                                                item.color.replace('text-', 'bg-')
-                                            )} />
-                                        </div>
-                                    );
-                                })}
+                                    { label: 'In Progress', value: MOCK_LEADS.inProgress, color: 'text-blue-600' },
+                                    { label: 'Won', value: MOCK_LEADS.achieved, color: 'text-emerald-600' },
+                                    { label: 'Lost', value: MOCK_LEADS.lost, color: 'text-rose-600' },
+                                ].map(item => (
+                                    <div key={item.label} className="text-center bg-slate-50 rounded-xl py-3">
+                                        <div className={cn('text-2xl font-black', item.color)}>{item.value}</div>
+                                        <div className="text-xs font-semibold text-slate-500 mt-0.5">{item.label}</div>
+                                    </div>
+                                ))}
                             </div>
                         </CardContent>
                     </Card>

@@ -245,6 +245,13 @@ export default function LeadsModule() {
   const [tagsInput, setTagsInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  // Lead Report states
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportDateRange, setReportDateRange] = useState<"today" | "week" | "month" | "year" | "custom">("month");
+  const [reportStartDate, setReportStartDate] = useState("");
+  const [reportEndDate, setReportEndDate] = useState("");
+  const [generatingReport, setGeneratingReport] = useState(false);
+
   // Demo data
   const [leads, setLeads] = useState<Lead[]>([
     {
@@ -1134,6 +1141,141 @@ export default function LeadsModule() {
     });
   };
 
+  // Report Generation Functions
+  const getReportDateRange = () => {
+    const today = new Date();
+    let startDate = new Date();
+    let endDate = new Date();
+
+    switch (reportDateRange) {
+      case "today":
+        startDate = new Date(today.setHours(0, 0, 0, 0));
+        endDate = new Date(today.setHours(23, 59, 59, 999));
+        break;
+      case "week":
+        const dayOfWeek = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - dayOfWeek);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+      case "month":
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+        break;
+      case "year":
+        startDate = new Date(today.getFullYear(), 0, 1);
+        endDate = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
+        break;
+      case "custom":
+        if (reportStartDate && reportEndDate) {
+          startDate = new Date(reportStartDate);
+          endDate = new Date(reportEndDate);
+          endDate.setHours(23, 59, 59, 999);
+        }
+        break;
+    }
+
+    return { startDate, endDate };
+  };
+
+  const parseLeadDate = (dateStr: string): Date => {
+    // Handle various date formats: "Feb 10, 2026", "2 hours ago", etc.
+    if (dateStr.includes("ago")) {
+      const now = new Date();
+      if (dateStr.includes("hour")) return now;
+      if (dateStr.includes("day")) {
+        const days = parseInt(dateStr);
+        now.setDate(now.getDate() - days);
+        return now;
+      }
+      return now;
+    }
+    return new Date(dateStr);
+  };
+
+  const getFilteredLeadsForReport = () => {
+    const { startDate, endDate } = getReportDateRange();
+    return leads.filter(lead => {
+      const leadDate = parseLeadDate(lead.createdDate);
+      return leadDate >= startDate && leadDate <= endDate;
+    });
+  };
+
+  const generateReportStatistics = () => {
+    const reportLeads = getFilteredLeadsForReport();
+    const totalLeads = reportLeads.length;
+    const totalValue = reportLeads.reduce((sum, lead) => sum + (lead.leadValue || 0), 0);
+    const avgLeadScore = totalLeads > 0 
+      ? reportLeads.reduce((sum, lead) => sum + (lead.leadScore || 0), 0) / totalLeads 
+      : 0;
+
+    const statusBreakdown = reportLeads.reduce((acc, lead) => {
+      acc[lead.status] = (acc[lead.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const sourceBreakdown = reportLeads.reduce((acc, lead) => {
+      acc[lead.source] = (acc[lead.source] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const temperatureBreakdown = reportLeads.reduce((acc, lead) => {
+      const temp = lead.temperature || "cold";
+      acc[temp] = (acc[temp] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const wonLeads = reportLeads.filter(l => l.status === "won").length;
+    const lostLeads = reportLeads.filter(l => l.status === "lost").length;
+    const conversionRate = totalLeads > 0 ? ((wonLeads / totalLeads) * 100).toFixed(1) : "0";
+
+    return {
+      totalLeads,
+      totalValue,
+      avgLeadScore: avgLeadScore.toFixed(1),
+      statusBreakdown,
+      sourceBreakdown,
+      temperatureBreakdown,
+      wonLeads,
+      lostLeads,
+      conversionRate,
+      reportLeads
+    };
+  };
+
+  const handleExportReport = () => {
+    setGeneratingReport(true);
+    
+    setTimeout(() => {
+      const { reportLeads, ...stats } = generateReportStatistics();
+      const { startDate, endDate } = getReportDateRange();
+      
+      const csvHeaders = "Name,Company,Email,Phone,Status,Source,Priority,Lead Value,Score,Temperature,Assigned To,Created Date\n";
+      const csvData = reportLeads.map(lead => 
+        `"${lead.name}","${lead.company || ''}","${lead.email}","${lead.phone}","${lead.status}","${lead.source}","${lead.priority}","${lead.leadValue || 0}","${lead.leadScore || 0}","${lead.temperature || 'cold'}","${lead.assignedTo}","${lead.createdDate}"`
+      ).join('\n');
+      
+      const csv = csvHeaders + csvData;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lead-report-${startDate.toISOString().split('T')[0]}-to-${endDate.toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      setGeneratingReport(false);
+      toast({
+        title: "📊 Report Exported",
+        description: `Generated report for ${reportLeads.length} leads`,
+        duration: 3000,
+      });
+    }, 500);
+  };
+
   // Bulk Actions
   const handleBulkAssign = (assignTo: string) => {
     toast({
@@ -1488,6 +1630,15 @@ export default function LeadsModule() {
                 <Button variant="outline" size="sm" onClick={handleExport} className="hover:bg-green-50 hover:border-green-500">
                   <Download className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">Export</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowReportModal(true)} 
+                  className="hover:bg-emerald-50 hover:border-emerald-500"
+                >
+                  <BarChart3 className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Lead Report</span>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -2716,10 +2867,10 @@ export default function LeadsModule() {
                 </Card>
 
                 {/* Contact Details Section */}
-                <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50/50 to-white shadow-lg">
-                  <CardHeader className="pb-4 bg-gradient-to-r from-purple-100/50 to-pink-100/50">
-                    <CardTitle className="text-base flex items-center gap-3 text-purple-900">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+                <Card className="border-2 border-teal-200 bg-gradient-to-br from-teal-50/50 to-white shadow-lg">
+                  <CardHeader className="pb-4 bg-gradient-to-r from-teal-100/50 to-cyan-100/50">
+                    <CardTitle className="text-base flex items-center gap-3 text-teal-900">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-md">
                         <Mail className="w-5 h-5 text-white" />
                       </div>
                       <span className="font-bold">Contact Information</span>
@@ -3495,6 +3646,297 @@ export default function LeadsModule() {
           onSend={handleSendEmail}
         />
       )}
+
+      {/* Lead Report Modal */}
+      <Dialog open={showReportModal} onOpenChange={setShowReportModal}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent flex items-center gap-2">
+              <BarChart3 className="w-6 h-6 text-emerald-600" />
+              Lead Report Generator
+            </DialogTitle>
+            <DialogDescription>
+              Generate comprehensive reports with customizable date ranges and export data
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Date Range Selection */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <h3 className="font-semibold text-emerald-900 mb-3 flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Select Date Range
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+                <Button
+                  variant={reportDateRange === "today" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setReportDateRange("today")}
+                  className={reportDateRange === "today" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                >
+                  <Clock3 className="w-4 h-4 mr-2" />
+                  Today
+                </Button>
+                <Button
+                  variant={reportDateRange === "week" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setReportDateRange("week")}
+                  className={reportDateRange === "week" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                >
+                  <CalendarClock className="w-4 h-4 mr-2" />
+                  This Week
+                </Button>
+                <Button
+                  variant={reportDateRange === "month" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setReportDateRange("month")}
+                  className={reportDateRange === "month" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  This Month
+                </Button>
+                <Button
+                  variant={reportDateRange === "year" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setReportDateRange("year")}
+                  className={reportDateRange === "year" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  This Year
+                </Button>
+                <Button
+                  variant={reportDateRange === "custom" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setReportDateRange("custom")}
+                  className={reportDateRange === "custom" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                >
+                  <SlidersHorizontal className="w-4 h-4 mr-2" />
+                  Custom
+                </Button>
+              </div>
+
+              {/* Custom Date Range Inputs */}
+              {reportDateRange === "custom" && (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reportStartDate" className="text-sm font-semibold text-emerald-900">
+                      Start Date
+                    </Label>
+                    <Input
+                      id="reportStartDate"
+                      type="date"
+                      value={reportStartDate}
+                      onChange={(e) => setReportStartDate(e.target.value)}
+                      className="border-emerald-200 focus:border-emerald-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reportEndDate" className="text-sm font-semibold text-emerald-900">
+                      End Date
+                    </Label>
+                    <Input
+                      id="reportEndDate"
+                      type="date"
+                      value={reportEndDate}
+                      onChange={(e) => setReportEndDate(e.target.value)}
+                      className="border-emerald-200 focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Report Statistics */}
+            {(() => {
+              const stats = generateReportStatistics();
+              const { startDate, endDate } = getReportDateRange();
+              
+              return (
+                <>
+                  {/* Date Range Display */}
+                  <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 text-center">
+                    <p className="text-sm text-teal-800">
+                      <strong>Report Period:</strong> {startDate.toLocaleDateString()} - {endDate.toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  {/* Key Metrics Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Card className="border-2 border-emerald-200 hover:shadow-lg transition-shadow">
+                      <CardContent className="pt-6">
+                        <div className="text-center">
+                          <Users className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
+                          <p className="text-3xl font-bold text-emerald-600">{stats.totalLeads}</p>
+                          <p className="text-sm text-gray-600 mt-1">Total Leads</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-2 border-teal-200 hover:shadow-lg transition-shadow">
+                      <CardContent className="pt-6">
+                        <div className="text-center">
+                          <DollarSign className="w-8 h-8 mx-auto mb-2 text-teal-600" />
+                          <p className="text-3xl font-bold text-teal-600">
+                            ${(stats.totalValue / 1000).toFixed(0)}k
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">Total Value</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-2 border-cyan-200 hover:shadow-lg transition-shadow">
+                      <CardContent className="pt-6">
+                        <div className="text-center">
+                          <Target className="w-8 h-8 mx-auto mb-2 text-cyan-600" />
+                          <p className="text-3xl font-bold text-cyan-600">{stats.avgLeadScore}</p>
+                          <p className="text-sm text-gray-600 mt-1">Avg Lead Score</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-2 border-green-200 hover:shadow-lg transition-shadow">
+                      <CardContent className="pt-6">
+                        <div className="text-center">
+                          <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                          <p className="text-3xl font-bold text-green-600">{stats.conversionRate}%</p>
+                          <p className="text-sm text-gray-600 mt-1">Conversion Rate</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Detailed Breakdown */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {/* Status Breakdown */}
+                    <Card className="border-emerald-200">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Activity className="w-5 h-5 text-emerald-600" />
+                          Status Breakdown
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {Object.entries(stats.statusBreakdown).map(([status, count]) => (
+                            <div key={status} className="flex justify-between items-center">
+                              <span className="text-sm capitalize">{getStatusLabel(status as LeadStatus)}</span>
+                              <Badge variant="outline" className="font-semibold">{count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Source Breakdown */}
+                    <Card className="border-teal-200">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Globe className="w-5 h-5 text-teal-600" />
+                          Lead Sources
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {Object.entries(stats.sourceBreakdown).map(([source, count]) => (
+                            <div key={source} className="flex justify-between items-center">
+                              <span className="text-sm">{source}</span>
+                              <Badge variant="outline" className="font-semibold">{count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Temperature Breakdown */}
+                    <Card className="border-cyan-200">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Flame className="w-5 h-5 text-cyan-600" />
+                          Lead Temperature
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {Object.entries(stats.temperatureBreakdown).map(([temp, count]) => (
+                            <div key={temp} className="flex justify-between items-center">
+                              <span className="text-sm capitalize flex items-center gap-2">
+                                {temp === "hot" && <Flame className="w-4 h-4 text-red-500" />}
+                                {temp === "warm" && <TrendingUp className="w-4 h-4 text-orange-500" />}
+                                {temp === "cold" && <TrendingDown className="w-4 h-4 text-blue-500" />}
+                                {temp}
+                              </span>
+                              <Badge variant="outline" className="font-semibold">{count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Performance Summary */}
+                  <Card className="border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-emerald-800">
+                        <Award className="w-5 h-5" />
+                        Performance Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <CheckCircle className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                          <p className="text-2xl font-bold text-green-600">{stats.wonLeads}</p>
+                          <p className="text-xs text-gray-600">Won Leads</p>
+                        </div>
+                        <div className="text-center">
+                          <XCircle className="w-6 h-6 mx-auto mb-2 text-red-600" />
+                          <p className="text-2xl font-bold text-red-600">{stats.lostLeads}</p>
+                          <p className="text-xs text-gray-600">Lost Leads</p>
+                        </div>
+                        <div className="text-center">
+                          <Clock className="w-6 h-6 mx-auto mb-2 text-orange-600" />
+                          <p className="text-2xl font-bold text-orange-600">
+                            {stats.totalLeads - stats.wonLeads - stats.lostLeads}
+                          </p>
+                          <p className="text-xs text-gray-600">In Progress</p>
+                        </div>
+                        <div className="text-center">
+                          <TrendingUp className="w-6 h-6 mx-auto mb-2 text-emerald-600" />
+                          <p className="text-2xl font-bold text-emerald-600">{stats.conversionRate}%</p>
+                          <p className="text-xs text-gray-600">Win Rate</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              );
+            })()}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowReportModal(false)}>
+              Close
+            </Button>
+            <Button
+              onClick={handleExportReport}
+              disabled={generatingReport || (reportDateRange === "custom" && (!reportStartDate || !reportEndDate))}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {generatingReport ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Report (CSV)
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
@@ -5081,16 +5523,16 @@ Generated: ${new Date().toLocaleString()}
 
                   {/* Upcoming Tasks */}
                   {lead.tasks && lead.tasks.length > 0 && (
-                    <Card className="border-2 border-purple-200 shadow-md">
-                      <CardHeader className="pb-3 bg-purple-50 rounded-t-lg">
+                    <Card className="border-2 border-teal-200 shadow-md">
+                      <CardHeader className="pb-3 bg-teal-50 rounded-t-lg">
                         <CardTitle className="text-base flex items-center justify-between">
-                          <span className="flex items-center gap-2 text-purple-900">
-                            <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
+                          <span className="flex items-center gap-2 text-teal-900">
+                            <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center">
                               <CheckCheck className="w-4 h-4 text-white" />
                             </div>
                             Upcoming Tasks
                           </span>
-                          <Badge className="bg-purple-600 text-white">{lead.tasks.length}</Badge>
+                          <Badge className="bg-teal-600 text-white">{lead.tasks.length}</Badge>
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="pt-4">
@@ -5870,24 +6312,13 @@ Generated: ${new Date().toLocaleString()}
                   </div>
                 </TabsContent>
 
-                {/* REMINDERS TAB - Enhanced Follow-up System */}
+                {/* REMINDERS TAB - Follow-up System */}
                 <TabsContent value="reminders" className="mt-0 space-y-4 sm:space-y-6">
-                  
-                  {/* Enhanced Features Banner */}
-                  <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 rounded-lg shadow-lg mb-4">
-                    <div className="flex items-center gap-3">
-                      <Sparkles className="w-6 h-6" />
-                      <div>
-                        <h3 className="font-bold text-lg">✨ Enhanced Follow-up Reminder System</h3>
-                        <p className="text-sm text-purple-100">Complete reminder management with priority, categories, and smart notifications</p>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Reminder Form */}
-                  <Card className="border-2 border-purple-200 shadow-md">
-                    <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-pink-50">
-                      <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-purple-900">
+                  <Card className="border-2 border-teal-200 shadow-md">
+                    <CardHeader className="pb-3 bg-gradient-to-r from-teal-50 to-cyan-50">
+                      <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-teal-900">
                         <Bell className="w-5 h-5" />
                         {editingReminder ? "Edit Follow-up Reminder" : "Schedule Follow-up Reminder"}
                       </CardTitle>

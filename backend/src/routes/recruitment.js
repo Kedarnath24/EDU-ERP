@@ -42,6 +42,7 @@ router.get('/jobs/public', async (_req, res) => {
             benefits: row.benefits,
             education: row.education,
             status: row.status,
+            formId: row.form_id || null,
             postedDate: formatRelativeDate(row.created_at),
         }));
 
@@ -174,6 +175,7 @@ router.get('/jobs', requireAuth, async (_req, res) => {
             education: row.education,
             applicants: applicantCounts[row.id] || 0,
             status: row.status,
+            formId: row.form_id || null,
             postedDate: formatRelativeDate(row.created_at),
         }));
 
@@ -194,7 +196,7 @@ router.post('/jobs', requireAuth, async (req, res) => {
             title, department, location, employmentType, workMode,
             salaryMin, salaryMax, description, skills, duration,
             experience, openings, deadline, responsibilities,
-            requirements, benefits, education,
+            requirements, benefits, education, formId,
         } = req.body;
 
         if (!title || !department || !employmentType) {
@@ -224,6 +226,7 @@ router.post('/jobs', requireAuth, async (req, res) => {
                 benefits: benefits || null,
                 education: education || 'Not specified',
                 status: 'Active',
+                form_id: formId || null,
                 created_by: req.user.id,
             })
             .select()
@@ -289,6 +292,7 @@ router.put('/jobs/:id', requireAuth, async (req, res) => {
             benefits: 'benefits',
             education: 'education',
             status: 'status',
+            formId: 'form_id',
         };
 
         for (const [clientKey, dbKey] of Object.entries(fieldMap)) {

@@ -57,8 +57,10 @@ import {
   createJobPosting,
   deleteJobPosting,
   getRecruitmentStats,
+  getForms,
   type JobPosting,
   type RecruitmentStats,
+  type Form,
 } from '@/lib/api';
 
 // ─── Shared Types ──────────────────────────────────
@@ -113,6 +115,7 @@ interface JobFormData {
   responsibilities: string;
   requirements: string;
   benefits: string;
+  formId: string;
 }
 
 const emptyForm: JobFormData = {
@@ -120,7 +123,7 @@ const emptyForm: JobFormData = {
   workMode: '', experience: '', openings: '1', deadline: '',
   duration: '', education: '', salaryMin: '', salaryMax: '',
   skills: [], description: '', responsibilities: '',
-  requirements: '', benefits: '',
+  requirements: '', benefits: '', formId: '',
 };
 
 export default function RecruitmentDashboard() {
@@ -146,6 +149,7 @@ export default function RecruitmentDashboard() {
   const [form, setForm] = useState<JobFormData>(emptyForm);
   const [skillInput, setSkillInput] = useState('');
   const [publishing, setPublishing] = useState(false);
+  const [availableForms, setAvailableForms] = useState<Form[]>([]);
   const { toast } = useToast();
 
   // ─── Fetch data from backend ───
@@ -167,10 +171,15 @@ export default function RecruitmentDashboard() {
     }
   }, []);
 
+  const fetchAvailableForms = useCallback(async () => {
+    const { data } = await getForms();
+    if (data) setAvailableForms(data.filter(f => f.status === 'active'));
+  }, []);
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await Promise.all([fetchJobs(), fetchStats()]);
+      await Promise.all([fetchJobs(), fetchStats(), fetchAvailableForms()]);
       setLoading(false);
     };
     load();
@@ -232,6 +241,7 @@ export default function RecruitmentDashboard() {
       requirements: form.requirements,
       benefits: form.benefits,
       education: form.education || 'Not specified',
+      formId: form.formId && form.formId !== 'none' ? form.formId : undefined,
     });
     setPublishing(false);
 
@@ -458,6 +468,24 @@ export default function RecruitmentDashboard() {
                     {/* ── Job Details ── */}
                     <div className="space-y-4">
                       <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider border-b pb-2">Job Details</h3>
+
+                      {/* Application Form Selector */}
+                      <div className="space-y-2">
+                        <Label>Application Form</Label>
+                        <Select value={form.formId} onValueChange={(v) => updateForm('formId', v)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a form (optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No custom form</SelectItem>
+                            {availableForms.map(f => (
+                              <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-slate-400">Attach a custom form from Form Builder for applicants to fill</p>
+                      </div>
+
                       <div className="space-y-2">
                         <Label>Job Description <span className="text-red-500">*</span></Label>
                         <Textarea

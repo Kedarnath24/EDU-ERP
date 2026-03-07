@@ -706,6 +706,7 @@ export async function createJobPosting(payload: {
     requirements?: string;
     benefits?: string;
     education?: string;
+    formId?: string;
 }): Promise<{ data?: JobPosting; error?: string }> {
     const result = await apiFetch<{ job: JobPosting }>('/api/recruitment/jobs', {
         method: 'POST',
@@ -822,3 +823,168 @@ export async function getDashboardStats(): Promise<{ data?: DashboardStats; erro
     const result = await apiFetch<DashboardStats>('/api/dashboard/stats');
     return result.error ? { error: result.error } : { data: result.data! };
 }
+
+
+// ─────────────────────────────────────────────────────────────
+// Settings & Integrations
+// ─────────────────────────────────────────────────────────────
+
+export interface IntegrationConfig {
+    id: string;
+    config: Record<string, string>;
+    is_active: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+/** Fetch all configurations */
+export async function getAllIntegrationsConfig(): Promise<{ data?: IntegrationConfig[]; error?: string }> {
+    const result = await apiFetch<{ integrations: IntegrationConfig[] }>(`/api/settings/integrations`);
+    return result.error ? { error: result.error } : { data: result.data!.integrations };
+}
+
+/** Fetch configuration for a specific integration */
+export async function getIntegrationConfig(id: string): Promise<{ data?: IntegrationConfig; error?: string }> {
+    const result = await apiFetch<{ integration: IntegrationConfig }>(`/api/settings/integrations/${id}`);
+    return result.error ? { error: result.error } : { data: result.data!.integration };
+}
+
+/** Save configuration for a specific integration */
+export async function saveIntegrationConfig(id: string, config: Record<string, any>, is_active: boolean = true): Promise<{ data?: IntegrationConfig; error?: string; message?: string }> {
+    const result = await apiFetch<{ integration: IntegrationConfig, message: string }>(`/api/settings/integrations/${id}`, {
+        method: 'POST',
+        body: JSON.stringify({ config, is_active })
+    });
+    return result.error ? { error: result.error } : { data: result.data!.integration, message: result.data!.message };
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// Form Builder API
+// ─────────────────────────────────────────────────────────────
+
+export interface FormField {
+    id?: string;
+    label: string;
+    type: string;
+    placeholder?: string;
+    required?: boolean;
+    options?: string[];
+    order?: number;
+}
+
+export interface Form {
+    id: string;
+    title: string;
+    description?: string;
+    status: string;
+    responseCount?: number;
+    createdAt?: string;
+    updatedAt?: string;
+    fields?: FormField[];
+}
+
+export interface FormResponse {
+    id: string;
+    respondentName?: string;
+    respondentEmail?: string;
+    jobId?: string;
+    submittedAt: string;
+    answers: Record<string, string>;
+}
+
+export interface FormResponsesResult {
+    formTitle: string;
+    fields: { id: string; label: string; type: string; order: number }[];
+    responses: FormResponse[];
+    total: number;
+}
+
+/** Get all forms */
+export async function getForms(): Promise<{ data?: Form[]; error?: string }> {
+    const result = await apiFetch<{ forms: Form[] }>('/api/forms');
+    return result.error ? { error: result.error } : { data: result.data!.forms };
+}
+
+/** Get a single form with fields */
+export async function getForm(id: string): Promise<{ data?: Form; error?: string }> {
+    const result = await apiFetch<{ form: Form }>(`/api/forms/${id}`);
+    return result.error ? { error: result.error } : { data: result.data!.form };
+}
+
+/** Create a new form */
+export async function createForm(payload: {
+    title: string;
+    description?: string;
+    fields?: FormField[];
+}): Promise<{ data?: Form; error?: string }> {
+    const result = await apiFetch<{ form: Form }>('/api/forms', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+    return result.error ? { error: result.error } : { data: result.data!.form };
+}
+
+/** Update an existing form */
+export async function updateForm(
+    id: string,
+    payload: { title?: string; description?: string; status?: string; fields?: FormField[] }
+): Promise<{ data?: Form; error?: string }> {
+    const result = await apiFetch<{ form: Form }>(`/api/forms/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
+    return result.error ? { error: result.error } : { data: result.data!.form };
+}
+
+/** Delete a form */
+export async function deleteForm(id: string): Promise<{ error?: string }> {
+    const result = await apiFetch<{ message: string }>(`/api/forms/${id}`, {
+        method: 'DELETE',
+    });
+    return result.error ? { error: result.error } : {};
+}
+
+/** Get form responses */
+export async function getFormResponses(id: string): Promise<{ data?: FormResponsesResult; error?: string }> {
+    const result = await apiFetch<FormResponsesResult>(`/api/forms/${id}/responses`);
+    return result.error ? { error: result.error } : { data: result.data };
+}
+
+/** Get public form URL */
+export async function getFormPublicUrl(id: string): Promise<{ data?: { formId: string; title: string; status: string; publicUrl: string }; error?: string }> {
+    const result = await apiFetch<{ formId: string; title: string; status: string; publicUrl: string }>(`/api/forms/${id}/public-url`);
+    return result.error ? { error: result.error } : { data: result.data };
+}
+
+/** Get public form (no auth required) */
+export async function getPublicForm(id: string): Promise<{ data?: { id: string; title: string; description?: string; fields: FormField[] }; error?: string }> {
+    try {
+        const res = await fetch(`${BASE_URL}/api/forms/${id}/public`);
+        const json = await res.json();
+        if (!res.ok) return { error: json.error || 'Form not found' };
+        return { data: json.form };
+    } catch {
+        return { error: 'Network error. Please check your connection.' };
+    }
+}
+
+/** Submit public form (no auth required) */
+export async function submitPublicForm(
+    id: string,
+    payload: { respondentName?: string; respondentEmail?: string; answers: Record<string, string> }
+): Promise<{ data?: { message: string; responseId: string }; error?: string }> {
+    try {
+        const res = await fetch(`${BASE_URL}/api/forms/${id}/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (!res.ok) return { error: json.error || 'Submission failed' };
+        return { data: json };
+    } catch {
+        return { error: 'Network error. Please check your connection.' };
+    }
+}
+

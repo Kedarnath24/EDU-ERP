@@ -16,11 +16,9 @@ import HRMAttendance from "@/pages/hrm/hrm-attendance";
 import HRMPayroll from "@/pages/hrm/hrm-payroll";
 import HRMInsurance from "@/pages/hrm/hrm-insurance";
 import HRMAssets from "@/pages/hrm/hrm-assets";
-import HRMPerformance from "@/pages/hrm/hrm-performance";
 
 
 import HRMAutomation from "@/pages/hrm/hrm-automation";
-import HRMWorkflows from "@/pages/hrm/hrm-workflows";
 
 // Recruitment Module Pages
 import RecruitmentDashboard from "@/pages/recruitment/recruitment-dashboard";
@@ -44,6 +42,12 @@ import OrganizationSettings from "@/pages/settings/OrganizationSettings";
 
 // Attendance Module
 import AttendanceDashboard from "@/pages/attendance/AttendanceDashboard";
+
+// Form Builder Module
+import FormBuilderIndex from "@/pages/form-builder/index";
+import FormBuilderEditor from "@/pages/form-builder/builder";
+import FormResponses from "@/pages/form-builder/responses";
+import PublicFormPage from "@/pages/form-builder/public-form";
 
 // Lead Management Pages
 import LeadsWorkflow from "@/pages/leads/index";
@@ -71,8 +75,8 @@ function AppRouter() {
   const [location, setLocation] = useLocation();
 
   useEffect(() => {
-    // If we're not landing on an auth page and there's no session, redirect to login
-    if (!loading && !session && location !== "/login" && location !== "/forgot-password") {
+    // If we're not landing on an auth page or public form and there's no session, redirect to login
+    if (!loading && !session && location !== "/login" && location !== "/forgot-password" && !location.startsWith("/form/fill/")) {
       setLocation("/login");
     }
     // If we are on an auth page but already have a session, redirect to home
@@ -91,6 +95,9 @@ function AppRouter() {
 
   return (
     <Switch>
+      {/* Public Form Route (no auth required) */}
+      <Route path="/form/fill/:id" component={PublicFormPage} />
+
       {/* Auth Routes */}
       <Route path="/login" component={Login} />
       <Route path="/forgot-password" component={ForgotPassword} />
@@ -106,10 +113,8 @@ function AppRouter() {
       <Route path="/hrm/payroll" component={HRMPayroll} />
       <Route path="/hrm/insurance" component={HRMInsurance} />
       <Route path="/hrm/assets" component={HRMAssets} />
-      <Route path="/hrm/performance" component={HRMPerformance} />
       {/* Removed HRM Letters (deleted) and Travel Expense routes */}
       <Route path="/hrm/automation" component={HRMAutomation} />
-      <Route path="/hrm/workflows" component={HRMWorkflows} />
       <Route path="/hrm/*" component={HRMDashboard} />
       <Route path="/hrm" component={HRMDashboard} />
 
@@ -139,6 +144,11 @@ function AppRouter() {
       {/* Attendance Module */}
       <Route path="/attendance/*" component={AttendanceDashboard} />
       <Route path="/attendance" component={AttendanceDashboard} />
+
+      {/* Form Builder Module */}
+      <Route path="/form-builder/:id/responses" component={FormResponses} />
+      <Route path="/form-builder/:id" component={FormBuilderEditor} />
+      <Route path="/form-builder" component={FormBuilderIndex} />
 
       {/* Leads & Workflow Module */}
       <Route path="/leads/notes" component={LeadNotes} />

@@ -111,6 +111,11 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
       path: '/dashboard',
     },
     {
+      name: 'Form Builder',
+      icon: FileText,
+      path: '/form-builder',
+    },
+    {
       name: 'CRM',
       icon: Users,
       path: '/leads',
@@ -137,9 +142,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
         { name: 'Payroll', path: '/hrm/payroll' },
         { name: 'Insurance', path: '/hrm/insurance' },
         { name: 'Assets', path: '/hrm/assets' },
-        { name: 'Performance', path: '/hrm/performance' },
         { name: 'Automation', path: '/hrm/automation' },
-        { name: 'Workflows', path: '/hrm/workflows' },
       ]
     },
     {

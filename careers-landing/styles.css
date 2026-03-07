@@ -1507,3 +1507,57 @@ img {
         grid-template-columns: 1fr;
     }
 }
+
+/* ─── Dynamic Form Fields (Form Builder) ─── */
+.form-subtitle {
+    font-size: .85rem;
+    color: var(--slate-500);
+    margin-bottom: 8px;
+}
+
+.apply-form-field textarea,
+.apply-form-field select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--slate-200);
+    border-radius: var(--radius-md);
+    font-size: .88rem;
+    font-family: inherit;
+    color: var(--slate-800);
+    background: var(--slate-50);
+    transition: all .2s var(--ease);
+    outline: none;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.apply-form-field textarea:focus,
+.apply-form-field select:focus {
+    border-color: var(--purple-400);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, .1);
+}
+
+.radio-group,
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-option,
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .85rem;
+    color: var(--slate-700);
+    cursor: pointer;
+}
+
+.radio-option input,
+.checkbox-option input {
+    width: auto;
+    accent-color: var(--purple-600);
+    cursor: pointer;
+}

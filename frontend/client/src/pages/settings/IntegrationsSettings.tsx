@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
@@ -33,6 +33,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { getAllIntegrationsConfig, saveIntegrationConfig } from "@/lib/api";
 
 interface Integration {
   id: string;
@@ -42,7 +43,8 @@ interface Integration {
   icon: React.ElementType;
   iconColor: string;
   connected: boolean;
-  configFields?: { key: string; label: string; type?: string; placeholder?: string }[];
+  configFields?: { key: string; label: string; type?: string; placeholder?: string; defaultValue?: string; }[];
+  backendConfig?: Record<string, any>;
 }
 
 const integrationList: Integration[] = [
@@ -62,14 +64,16 @@ const integrationList: Integration[] = [
   {
     id: "gmail",
     name: "Gmail / Google Workspace",
-    description: "Send transactional and team emails via Gmail.",
+    description: "Send transactional and team emails via Gmail SMTP.",
     category: "Email",
     icon: Mail,
     iconColor: "text-red-600 bg-red-100",
     connected: false,
     configFields: [
-      { key: "client_id", label: "OAuth Client ID", placeholder: "xxxx.apps.googleusercontent.com" },
-      { key: "client_secret", label: "Client Secret", type: "password", placeholder: "••••••••" },
+      { key: "smtp_host", label: "SMTP Host", placeholder: "smtp.gmail.com", defaultValue: "smtp.gmail.com" },
+      { key: "smtp_port", label: "Port", placeholder: "465 (SSL) or 587 (TLS)", defaultValue: "465" },
+      { key: "username", label: "Username", placeholder: "yourname@gmail.com" },
+      { key: "password", label: "Password", type: "password", placeholder: "Google App Password" },
     ],
   },
   {
@@ -156,12 +160,48 @@ const IntegrationsSettings = () => {
   const [configuring, setConfiguring] = useState<Integration | null>(null);
   const [configValues, setConfigValues] = useState<Record<string, string>>({});
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const toggleConnect = (id: string) => {
+  // Load configs from backend on mount
+  useEffect(() => {
+    const fetchConfigs = async () => {
+      setLoading(true);
+      const { data, error } = await getAllIntegrationsConfig();
+      if (!error && data) {
+        setIntegrations(prev => prev.map(i => {
+          const backendItem = data.find((d: any) => d.id === i.id);
+          if (backendItem) {
+            return {
+              ...i,
+              connected: backendItem.is_active,
+              backendConfig: backendItem.config || {}
+            };
+          }
+          return i;
+        }));
+      }
+      setLoading(false);
+    };
+    fetchConfigs();
+  }, []);
+
+  const toggleConnect = async (id: string) => {
+    const target = integrations.find(i => i.id === id);
+    if (!target) return;
+
+    const newConnectedStatus = !target.connected;
+    const configToSave = target.backendConfig || {};
+
+    const { error } = await saveIntegrationConfig(id, configToSave, newConnectedStatus);
+    if (error) {
+      toast({ title: "Failed to update integration", description: error, variant: "destructive" });
+      return;
+    }
+
     setIntegrations(prev =>
       prev.map(i => {
         if (i.id !== id) return i;
-        const updated = { ...i, connected: !i.connected };
+        const updated = { ...i, connected: newConnectedStatus };
         toast({
           title: updated.connected ? `${i.name} connected` : `${i.name} disconnected`,
           description: updated.connected ? "Integration is now active." : "Integration has been removed.",
@@ -173,13 +213,25 @@ const IntegrationsSettings = () => {
 
   const openConfigure = (i: Integration) => {
     setConfiguring(i);
-    setConfigValues({});
+    // Initialize configValues from backendConfig or defaults
+    const initialConfig: Record<string, string> = {};
+    i.configFields?.forEach(f => {
+      initialConfig[f.key] = (i.backendConfig?.[f.key]) ?? (f.defaultValue ?? "");
+    });
+    setConfigValues(initialConfig);
   };
 
-  const saveConfig = () => {
+  const saveConfig = async () => {
     if (!configuring) return;
+
+    const { error } = await saveIntegrationConfig(configuring.id, configValues, true);
+    if (error) {
+      toast({ title: "Failed to save configuration", description: error, variant: "destructive" });
+      return;
+    }
+
     setIntegrations(prev =>
-      prev.map(i => i.id === configuring.id ? { ...i, connected: true } : i)
+      prev.map(i => i.id === configuring.id ? { ...i, connected: true, backendConfig: configValues } : i)
     );
     toast({ title: `${configuring.name} configured`, description: "Settings saved and integration enabled." });
     setConfiguring(null);
@@ -211,7 +263,10 @@ const IntegrationsSettings = () => {
         </div>
 
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Integrations</h1>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            Integrations
+            {loading && <RefreshCw size={18} className="animate-spin text-slate-400" />}
+          </h1>
           <p className="mt-1 text-sm text-slate-500">
             Connect Z-ERP with your favorite tools to automate workflows and sync data.
           </p>

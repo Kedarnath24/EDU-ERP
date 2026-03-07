@@ -196,8 +196,116 @@ clearFiltersBtn.addEventListener('click', () => {
     applyFilters();
 });
 
+// ─── State for dynamic form fields ───
+let currentFormFields = [];
+let currentFormId = null;
+
+// ─── Fetch form fields for a job ───
+async function fetchFormForJob(formId) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/forms/${formId}/public`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.form || null;
+    } catch (err) {
+        console.error('Error fetching form:', err);
+        return null;
+    }
+}
+
+// ─── Build dynamic form HTML ───
+function buildDynamicFormHtml(form) {
+    let fieldsHtml = '';
+    form.fields.forEach(field => {
+        const reqSpan = field.required ? '<span class="required">*</span>' : '';
+        const fieldId = `form-field-${field.id}`;
+        let inputHtml = '';
+
+        switch (field.type) {
+            case 'textarea':
+                inputHtml = `<textarea id="${fieldId}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} rows="3"></textarea>`;
+                break;
+            case 'select':
+                const optionsHtml = (field.options || []).map(o => `<option value="${o}">${o}</option>`).join('');
+                inputHtml = `<select id="${fieldId}" ${field.required ? 'required' : ''}><option value="">Select...</option>${optionsHtml}</select>`;
+                break;
+            case 'radio':
+                inputHtml = `<div class="radio-group" id="${fieldId}">` +
+                    (field.options || []).map((o, i) => `<label class="radio-option"><input type="radio" name="${fieldId}" value="${o}" ${field.required && i === 0 ? '' : ''}/> ${o}</label>`).join('') +
+                    `</div>`;
+                break;
+            case 'checkbox':
+                inputHtml = `<div class="checkbox-group" id="${fieldId}">` +
+                    (field.options || []).map(o => `<label class="checkbox-option"><input type="checkbox" name="${fieldId}" value="${o}" /> ${o}</label>`).join('') +
+                    `</div>`;
+                break;
+            case 'date':
+                inputHtml = `<input type="date" id="${fieldId}" ${field.required ? 'required' : ''} />`;
+                break;
+            case 'number':
+                inputHtml = `<input type="number" id="${fieldId}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} />`;
+                break;
+            case 'email':
+                inputHtml = `<input type="email" id="${fieldId}" placeholder="${field.placeholder || 'you@example.com'}" ${field.required ? 'required' : ''} />`;
+                break;
+            case 'phone':
+                inputHtml = `<input type="tel" id="${fieldId}" placeholder="${field.placeholder || '+91 98765 43210'}" ${field.required ? 'required' : ''} />`;
+                break;
+            case 'url':
+                inputHtml = `<input type="url" id="${fieldId}" placeholder="${field.placeholder || 'https://'}" ${field.required ? 'required' : ''} />`;
+                break;
+            case 'file':
+                inputHtml = `<input type="file" id="${fieldId}" ${field.required ? 'required' : ''} />`;
+                break;
+            default:
+                inputHtml = `<input type="text" id="${fieldId}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} />`;
+        }
+
+        fieldsHtml += `
+            <div class="apply-form-field ${['textarea', 'checkbox', 'radio'].includes(field.type) ? 'apply-form-field-full' : ''}">
+                <label for="${fieldId}">${field.label} ${reqSpan}</label>
+                ${inputHtml}
+            </div>`;
+    });
+
+    return fieldsHtml;
+}
+
+// ─── Get dynamic field values ───
+function getDynamicFieldValues(fields) {
+    const answers = {};
+    fields.forEach(field => {
+        const fieldId = `form-field-${field.id}`;
+        if (field.type === 'checkbox') {
+            const checked = document.querySelectorAll(`[name="${fieldId}"]:checked`);
+            answers[field.id] = Array.from(checked).map(cb => cb.value).join(', ');
+        } else if (field.type === 'radio') {
+            const selected = document.querySelector(`[name="${fieldId}"]:checked`);
+            answers[field.id] = selected ? selected.value : '';
+        } else {
+            const el = document.getElementById(fieldId);
+            answers[field.id] = el ? el.value : '';
+        }
+    });
+    return answers;
+}
+
 // ─── Modal ───
-function openModal(job) {
+async function openModal(job) {
+    // Reset form state
+    currentFormFields = [];
+    currentFormId = null;
+
+    // If job has a form attached, fetch it
+    let dynamicForm = null;
+    if (job.formId) {
+        dynamicForm = await fetchFormForJob(job.formId);
+        if (dynamicForm) {
+            currentFormFields = dynamicForm.fields;
+            currentFormId = dynamicForm.id;
+        }
+    }
+
     const responsibilitiesList = job.responsibilities
         ? job.responsibilities.split('\n').filter(Boolean).map(r => `<li>${r}</li>`).join('')
         : '';
@@ -281,6 +389,7 @@ function openModal(job) {
     <!-- ═══════════ Application Form ═══════════ -->
     <div class="apply-form-section">
       <h3 class="modal-section-title">Apply for this Position</h3>
+      ${dynamicForm ? `<p class="form-subtitle">${dynamicForm.description || ''}</p>` : ''}
       <form id="apply-form" class="apply-form" onsubmit="return false;">
         <div class="apply-form-grid">
           <div class="apply-form-field">
@@ -295,6 +404,7 @@ function openModal(job) {
             <label for="apply-phone">Phone Number</label>
             <input type="tel" id="apply-phone" placeholder="+91 98765 43210" />
           </div>
+          ${dynamicForm ? buildDynamicFormHtml(dynamicForm) : ''}
         </div>
         <button type="button" id="apply-submit-btn" class="modal-apply-btn" onclick="submitApplication('${job.id}')">
           Apply Now ${ICONS.arrow}
@@ -352,6 +462,43 @@ async function submitApplication(jobId) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = `Apply Now ${ICONS.arrow}`;
             return;
+        }
+
+        // If there's a dynamic form attached, submit form responses too
+        if (currentFormId && currentFormFields.length > 0) {
+            const answers = getDynamicFieldValues(currentFormFields);
+
+            // Validate required dynamic fields
+            for (const field of currentFormFields) {
+                if (field.required) {
+                    const val = answers[field.id];
+                    if (!val || val.trim() === '') {
+                        showApplyStatus(`"${field.label}" is required.`, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `Apply Now ${ICONS.arrow}`;
+                        return;
+                    }
+                }
+            }
+
+            const formRes = await fetch(`${API_BASE_URL}/api/forms/${currentFormId}/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jobId,
+                    respondentName: name,
+                    respondentEmail: email,
+                    answers,
+                }),
+            });
+
+            if (!formRes.ok) {
+                const formData = await formRes.json();
+                showApplyStatus(formData.error || 'Failed to submit form data.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `Apply Now ${ICONS.arrow}`;
+                return;
+            }
         }
 
         // Success!

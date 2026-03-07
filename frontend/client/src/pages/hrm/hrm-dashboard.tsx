@@ -94,19 +94,10 @@ export default function HRMDashboard() {
       accent: 'border-blue-200'
     },
     {
-      icon: TrendingUp,
-      title: 'Performance',
-      description: 'Reviews, KPIs, appraisals, and goal tracking',
-      route: '/hrm/performance',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      accent: 'border-orange-200'
-    },
-    {
       icon: GitBranch,
       title: 'Automation',
       description: 'Multi-stage approval processes and business logic',
-      route: '/hrm/workflows',
+      route: '/hrm/automation',
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
       accent: 'border-indigo-200'

@@ -515,4 +515,274 @@ router.get('/stats', requireAuth, async (req, res) => {
     }
 });
 
+// ─────────────────────────────────────────────────────────────
+// GET /api/attendance/all-today
+// HRM Admin: fetch today's attendance for ALL employees
+// Returns every employee joined with their attendance record
+// ─────────────────────────────────────────────────────────────
+router.get('/all-today', requireAuth, async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        // 1. Get all active employees
+        const { data: employees, error: empErr } = await supabase
+            .from('employees')
+            .select('id, employee_code, full_name, email, department, position, avatar_url, status')
+            .in('status', ['active', 'on_leave', 'probation']);
+
+        if (empErr) {
+            console.error('All-today employees error:', empErr);
+            return res.status(500).json({ error: 'Failed to fetch employees', details: empErr.message });
+        }
+
+        // 2. Get today's attendance records for all employees
+        const { data: records, error: attErr } = await supabase
+            .from(TABLE)
+            .select('*')
+            .eq('date', today);
+
+        if (attErr) {
+            console.error('All-today attendance error:', attErr);
+            return res.status(500).json({ error: 'Failed to fetch attendance records', details: attErr.message });
+        }
+
+        // 3. Build a map of employee_id → attendance record
+        const attendanceMap = {};
+        for (const rec of (records || [])) {
+            attendanceMap[rec.employee_id] = rec;
+        }
+
+        // 4. Merge employees with their attendance
+        const result = (employees || []).map((emp) => {
+            const rec = attendanceMap[emp.id] || null;
+            const initials = (emp.full_name || '')
+                .split(' ')
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
+
+            let status = 'absent';
+            let checkIn = null;
+            let checkOut = null;
+            let workHours = 0;
+
+            if (rec) {
+                status = rec.status || 'present';
+                checkIn = rec.check_in || null;
+                checkOut = rec.check_out || null;
+
+                if (rec.check_in && rec.check_out) {
+                    const breakMs = rec.total_break_duration_ms || 0;
+                    const workedMs = new Date(rec.check_out).getTime() - new Date(rec.check_in).getTime() - breakMs;
+                    workHours = parseFloat((Math.max(0, workedMs) / 3600000).toFixed(1));
+                } else if (rec.check_in) {
+                    // Still working — compute hours so far
+                    const breakMs = rec.total_break_duration_ms || 0;
+                    const workedMs = Date.now() - new Date(rec.check_in).getTime() - breakMs;
+                    workHours = parseFloat((Math.max(0, workedMs) / 3600000).toFixed(1));
+                }
+            }
+
+            // Format check_in / check_out into readable times
+            const fmtTime = (iso) => {
+                if (!iso) return '-';
+                const d = new Date(iso);
+                return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            };
+
+            return {
+                id: emp.employee_code || emp.id,
+                employee_id: emp.id,
+                name: emp.full_name,
+                department: emp.department || 'Unassigned',
+                checkIn: fmtTime(checkIn),
+                checkOut: fmtTime(checkOut),
+                status,
+                hours: `${workHours}h`,
+                avatar: initials,
+                avatar_url: emp.avatar_url || null,
+            };
+        });
+
+        // Summary counts
+        const presentCount = result.filter(r => r.status === 'present' || r.status === 'late').length;
+        const absentCount = result.filter(r => r.status === 'absent').length;
+        const leaveCount = result.filter(r => r.status === 'leave' || r.status === 'on_leave').length;
+        const lateCount = result.filter(r => r.status === 'late').length;
+
+        return res.json({
+            attendance: result,
+            summary: {
+                total: result.length,
+                present: presentCount,
+                absent: absentCount,
+                on_leave: leaveCount,
+                late: lateCount,
+            },
+        });
+    } catch (err) {
+        console.error('All-today unexpected error:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/attendance/all-monthly
+// HRM Admin: monthly attendance summary for ALL employees
+// ?month=YYYY-MM (defaults to current month)
+// ─────────────────────────────────────────────────────────────
+router.get(
+    '/all-monthly',
+    requireAuth,
+    [
+        query('month')
+            .optional()
+            .matches(/^\d{4}-\d{2}$/)
+            .withMessage('month must be YYYY-MM'),
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                error: 'Validation failed',
+                details: errors.array().map((e) => ({ field: e.path, message: e.msg })),
+            });
+        }
+
+        try {
+            // Determine date range
+            const now = new Date();
+            let year, mon;
+            if (req.query.month) {
+                [year, mon] = req.query.month.split('-').map(Number);
+            } else {
+                year = now.getFullYear();
+                mon = now.getMonth() + 1;
+            }
+            const monthStr = `${year}-${String(mon).padStart(2, '0')}`;
+            const startDate = `${monthStr}-01`;
+            const daysInMonth = new Date(year, mon, 0).getDate();
+            const endDate = `${monthStr}-${String(daysInMonth).padStart(2, '0')}`;
+
+            // 1. Get all employees
+            const { data: employees, error: empErr } = await supabase
+                .from('employees')
+                .select('id, employee_code, full_name, email, department, position, avatar_url, join_date');
+
+            if (empErr) {
+                console.error('All-monthly employees error:', empErr);
+                return res.status(500).json({ error: 'Failed to fetch employees', details: empErr.message });
+            }
+
+            // 2. Get all attendance records for the month
+            const { data: records, error: attErr } = await supabase
+                .from(TABLE)
+                .select('*')
+                .gte('date', startDate)
+                .lte('date', endDate);
+
+            if (attErr) {
+                console.error('All-monthly attendance error:', attErr);
+                return res.status(500).json({ error: 'Failed to fetch attendance records', details: attErr.message });
+            }
+
+            // 3. Group records by employee_id
+            const recordsByEmployee = {};
+            for (const rec of (records || [])) {
+                if (!recordsByEmployee[rec.employee_id]) {
+                    recordsByEmployee[rec.employee_id] = [];
+                }
+                recordsByEmployee[rec.employee_id].push(rec);
+            }
+
+            // 4. Build summary per employee
+            const summary = (employees || []).map((emp) => {
+                const empRecords = recordsByEmployee[emp.id] || [];
+                const initials = (emp.full_name || '')
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2);
+
+                let presentDays = 0;
+                let absentDays = 0;
+                let lateDays = 0;
+                let leaveDays = 0;
+                let totalOvertimeMs = 0;
+                const STANDARD_WORK_MS = 8 * 3600000; // 8 hours
+
+                for (const rec of empRecords) {
+                    const s = rec.status || 'present';
+                    if (s === 'present') presentDays++;
+                    else if (s === 'late') { lateDays++; presentDays++; }
+                    else if (s === 'absent') absentDays++;
+                    else if (s === 'leave' || s === 'on_leave') leaveDays++;
+
+                    // Calculate overtime
+                    if (rec.check_in && rec.check_out) {
+                        const breakMs = rec.total_break_duration_ms || 0;
+                        const workedMs = new Date(rec.check_out).getTime() - new Date(rec.check_in).getTime() - breakMs;
+                        if (workedMs > STANDARD_WORK_MS) {
+                            totalOvertimeMs += workedMs - STANDARD_WORK_MS;
+                        }
+                    }
+                }
+
+                const overtimeHours = Math.round(totalOvertimeMs / 3600000);
+
+                // Build daily attendance array
+                const dailyAttendance = empRecords.map((rec) => {
+                    const fmtTime = (iso) => {
+                        if (!iso) return '-';
+                        return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    };
+
+                    let workHours = 0;
+                    if (rec.check_in && rec.check_out) {
+                        const breakMs = rec.total_break_duration_ms || 0;
+                        const workedMs = new Date(rec.check_out).getTime() - new Date(rec.check_in).getTime() - breakMs;
+                        workHours = parseFloat((Math.max(0, workedMs) / 3600000).toFixed(1));
+                    }
+
+                    return {
+                        date: rec.date,
+                        checkIn: fmtTime(rec.check_in),
+                        checkOut: fmtTime(rec.check_out),
+                        status: rec.status || 'present',
+                        hours: `${workHours}h`,
+                        location: rec.location || 'Office',
+                    };
+                });
+
+                return {
+                    id: emp.employee_code || emp.id,
+                    employee_id: emp.id,
+                    name: emp.full_name,
+                    department: emp.department || 'Unassigned',
+                    email: emp.email,
+                    joinDate: emp.join_date || null,
+                    avatar: initials,
+                    avatar_url: emp.avatar_url || null,
+                    present: presentDays,
+                    absent: absentDays,
+                    late: lateDays,
+                    leave: leaveDays,
+                    overtime: `${overtimeHours}h`,
+                    dailyAttendance,
+                };
+            });
+
+            return res.json({
+                month: monthStr,
+                summary,
+            });
+        } catch (err) {
+            console.error('All-monthly unexpected error:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+);
+
 module.exports = router;

@@ -1544,7 +1544,7 @@ export default function HRMEmployees() {
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                   <div className="flex items-center gap-4">
                                     <Avatar className="h-14 w-14 sm:h-16 sm:w-16 border-3 border-white shadow-lg">
-                                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.name}`} />
+                                      <AvatarImage src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${employee.name}`} />
                                       <AvatarFallback className="bg-gradient-to-br from-rose-500 to-purple-500 text-white text-lg font-bold">
                                         {employee.avatar}
                                       </AvatarFallback>
@@ -2331,7 +2331,7 @@ export default function HRMEmployees() {
               {/* Employee Header */}
               <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
                 <Avatar className="h-16 w-16 border-2 border-white">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedEmployee.name}`} />
+                  <AvatarImage src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${selectedEmployee.name}`} />
                   <AvatarFallback className="bg-purple-500 text-white text-lg font-bold">
                     {selectedEmployee.avatar}
                   </AvatarFallback>
@@ -2740,7 +2740,7 @@ function EmployeeCard({
           <div className="relative group">
             <Avatar className="h-16 w-16 ring-4 ring-white shadow-md border border-slate-100 group-hover:scale-105 transition-transform duration-300 cursor-pointer">
               <AvatarImage
-                src={employee.photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.name}`}
+                src={employee.photoUrl || `https://api.dicebear.com/7.x/lorelei/svg?seed=${employee.name}`}
               />
               <AvatarFallback className="bg-blue-600 text-white text-xl font-bold">
                 {employee.avatar}
@@ -2858,7 +2858,7 @@ function EmployeeCard({
             <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-700 relative">
               <div className="absolute -bottom-12 left-8 p-1.5 bg-white rounded-[2rem] shadow-xl">
                 <Avatar className="h-28 w-28 border-2 border-white">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${employee.name}`} />
+                  <AvatarImage src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${employee.name}`} />
                   <AvatarFallback className="bg-blue-600 text-white text-2xl font-bold">{employee.avatar}</AvatarFallback>
                 </Avatar>
               </div>

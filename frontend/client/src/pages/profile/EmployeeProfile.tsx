@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Download, Edit, Calendar as CalendarIcon, Clock, CheckCircle, XCircle, FileText, Shield, Briefcase, Activity, CheckSquare, Save, Home, Building2, Laptop, Users, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,6 +131,17 @@ export default function EmployeeProfile() {
     'Employee';
   const authEmail: string = employeeData?.email || user?.email || 'employee@company.com';
 
+  // Initialize edit form fields when modal opens - PREVENTS FLICKERING
+  useEffect(() => {
+    if (showEditModal && employeeData) {
+      setEditName(employeeData?.full_name || authName);
+      setEditPhone(employeeData?.phone || '+1 555-0100');
+      setEditAddress(employeeData?.address || '—');
+      setEditDepartment(employeeData?.department || 'Engineering');
+      setEditPosition(employeeData?.position || 'Employee');
+    }
+  }, [showEditModal, employeeData, authName]);
+
   // Save profile handler
   const handleSaveProfile = async () => {
     setSavingProfile(true);
@@ -206,7 +217,8 @@ export default function EmployeeProfile() {
   }, [leavePreviewUrl]);
 
   // Employee data — name & email from real backend data; rest fallback to placeholders
-  const employee = {
+  // Memoized to prevent unnecessary re-renders and flickering
+  const employee = useMemo(() => ({
     id: employeeData?.employee_code || 'EMP-001',
     name: authName,
     email: authEmail,
@@ -228,7 +240,7 @@ export default function EmployeeProfile() {
       bankName: employeeData?.bank_name || '—',
       routingNumber: employeeData?.bank_routing_number || '****',
     },
-  };
+  }), [employeeData, authName, authEmail]);
 
   const insurancePolicies = [
     {
@@ -340,51 +352,49 @@ export default function EmployeeProfile() {
   const formatLeaveStatus = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
 
   const EditProfileModal = () => (
-    <Dialog open={showEditModal} onOpenChange={(v) => {
-      setShowEditModal(v);
-      if (v) {
-        // Pre-fill form fields
-        setEditName(employee.name);
-        setEditPhone(employee.phone);
-        setEditAddress(employee.address);
-        setEditDepartment(employee.department);
-        setEditPosition(employee.position);
-      }
-    }}>
+    <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
-          <DialogDescription>Update your personal information</DialogDescription>
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Edit Profile</DialogTitle>
+          <DialogDescription>Update your personal and professional information</DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <h3 className="font-semibold text-emerald-900 mb-1">Personal Information</h3>
+            <p className="text-sm text-emerald-700">Update your contact details and personal information</p>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="editName">Full Name</Label>
-              <Input id="editName" value={editName} onChange={e => setEditName(e.target.value)} />
+              <Label htmlFor="editName" className="text-sm font-semibold">Full Name</Label>
+              <Input id="editName" value={editName} onChange={e => setEditName(e.target.value)} className="border-emerald-200 focus:border-emerald-500" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editEmail">Email</Label>
-              <Input id="editEmail" type="email" defaultValue={employee.email} disabled />
+              <Label htmlFor="editEmail" className="text-sm font-semibold">Email</Label>
+              <Input id="editEmail" type="email" defaultValue={employee.email} disabled className="bg-gray-50" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="editPhone">Phone</Label>
-              <Input id="editPhone" value={editPhone} onChange={e => setEditPhone(e.target.value)} />
+              <Label htmlFor="editPhone" className="text-sm font-semibold">Phone</Label>
+              <Input id="editPhone" value={editPhone} onChange={e => setEditPhone(e.target.value)} className="border-emerald-200 focus:border-emerald-500" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editAddress">Address</Label>
-              <Input id="editAddress" value={editAddress} onChange={e => setEditAddress(e.target.value)} />
+              <Label htmlFor="editAddress" className="text-sm font-semibold">Address</Label>
+              <Input id="editAddress" value={editAddress} onChange={e => setEditAddress(e.target.value)} className="border-emerald-200 focus:border-emerald-500" />
             </div>
+          </div>
+          <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+            <h3 className="font-semibold text-teal-900 mb-1">Professional Information</h3>
+            <p className="text-sm text-teal-700">Update your role and department details</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="editDept">Department</Label>
-              <Input id="editDept" value={editDepartment} onChange={e => setEditDepartment(e.target.value)} />
+              <Label htmlFor="editDept" className="text-sm font-semibold">Department</Label>
+              <Input id="editDept" value={editDepartment} onChange={e => setEditDepartment(e.target.value)} className="border-emerald-200 focus:border-emerald-500" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editPos">Position</Label>
-              <Input id="editPos" value={editPosition} onChange={e => setEditPosition(e.target.value)} />
+              <Label htmlFor="editPos" className="text-sm font-semibold">Position</Label>
+              <Input id="editPos" value={editPosition} onChange={e => setEditPosition(e.target.value)} className="border-emerald-200 focus:border-emerald-500" />
             </div>
           </div>
         </div>
@@ -392,7 +402,7 @@ export default function EmployeeProfile() {
           <Button variant="outline" onClick={() => setShowEditModal(false)} disabled={savingProfile}>
             Cancel
           </Button>
-          <Button onClick={handleSaveProfile} disabled={savingProfile} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={handleSaveProfile} disabled={savingProfile} className="bg-emerald-600 hover:bg-emerald-700 text-white">
             {savingProfile ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Save Changes
           </Button>
@@ -550,7 +560,7 @@ export default function EmployeeProfile() {
           <Button
             onClick={handleSubmitLeave}
             disabled={submittingLeave || !leaveStartDate || !leaveEndDate}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             {submittingLeave ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -604,12 +614,12 @@ export default function EmployeeProfile() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="insurance">Insurance</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="leave">Leave</TabsTrigger>
-            <TabsTrigger value="payroll">Payroll</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 bg-emerald-50 border border-emerald-200">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Overview</TabsTrigger>
+            <TabsTrigger value="insurance" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Insurance</TabsTrigger>
+            <TabsTrigger value="attendance" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Attendance</TabsTrigger>
+            <TabsTrigger value="leave" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Leave</TabsTrigger>
+            <TabsTrigger value="payroll" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Payroll</TabsTrigger>
           </TabsList>
 
           {/* TAB 1: PROFILE OVERVIEW */}
